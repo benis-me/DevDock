@@ -46,4 +46,12 @@ describe('scanProject', () => {
     expect(r.isMonorepo).toBe(true)
     expect(r.workspaces.map((w) => w.relPath)).toContain('apps/site')
   })
+  it('includes monorepo root scripts when the root has scripts', () => {
+    writePkg('.', { name: 'root', private: true, workspaces: ['packages/*'], scripts: { 'build:all': 'turbo run build' } })
+    writePkg('packages/web', { name: 'web', scripts: { dev: 'vite' } })
+    const r = scanProject(dir)
+    expect(r.isMonorepo).toBe(true)
+    const root = r.workspaces.find((w) => w.relPath === '.')
+    expect(root?.scripts.map((s) => s.name)).toContain('build:all')
+  })
 })

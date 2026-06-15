@@ -15,10 +15,12 @@ export function detectPackageManager(dir: string): PackageManager {
 
 const LONG_RUNNING_NAME = /^(dev|start|serve|watch|preview)(:|$)/i
 const LONG_RUNNING_CMD =
-  /(vite(?!st)(?!\s+build)|next\s+dev|nuxt\s+dev|webpack(\s+serve|-dev-server)|react-scripts\s+start|vue-cli-service\s+serve|astro\s+dev|remix\s+dev|nodemon|tsc\s+-w|--watch)/i
+  /(vite(?!st)\b|next\s+dev|nuxt\s+dev|webpack(\s+serve|-dev-server)|react-scripts\s+start|vue-cli-service\s+serve|astro\s+dev|remix\s+dev|nodemon|tsc\s+-w|--watch)/i
 
 export function classifyScript(name: string, command: string): ScriptKind {
   if (LONG_RUNNING_NAME.test(name)) return 'long-running'
+  // 命令含独立 build 且非 watch → 一次性（避免 "vite --config x build" 被误判）
+  if (/\bbuild\b/.test(command) && !/(--watch|(^|\s)-w(\s|$))/.test(command)) return 'one-shot'
   if (LONG_RUNNING_CMD.test(command)) return 'long-running'
   return 'one-shot'
 }
@@ -86,6 +88,8 @@ export function scanProject(root: string): ScannedProject {
   const rootWs = buildWorkspace(root, join(root, 'package.json'))
 
   if (isMonorepo) {
+    // monorepo 根包自身的脚本（如 build:all/release）也要纳入
+    if (rootWs && rootWs.scripts.length > 0) workspaces.push(rootWs)
     const pkgGlobs = patterns.map((p) => `${p.replace(/\/$/, '')}/package.json`)
     const found = fg.sync(pkgGlobs, {
       cwd: root,

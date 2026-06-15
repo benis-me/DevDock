@@ -1,5 +1,8 @@
-// eslint-disable-next-line no-control-regex
-const ANSI_REGEX = /(\x1b|)[[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]|\[(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[mGKHF]/g
+// 同时匹配 CSI（[…）与 OSC（]…，含终端超链接）转义序列；ESC 必须存在
+const ANSI_REGEX = new RegExp(
+  '[\\u001B\\u009B][[\\]()#;?]*(?:(?:(?:(?:;[-a-zA-Z\\d/#&.:=?%@~_]+)*|[a-zA-Z\\d]+(?:;[-a-zA-Z\\d/#&.:=?%@~_]*)*)?\\u0007)|(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PR-TZcf-nq-uy=><~]))',
+  'g'
+)
 
 const URL_REGEX =
   /https?:\/\/(?:localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\]|[\w.-]+\.localhost)(?::\d+)?(?:\/[^\s]*)?/gi

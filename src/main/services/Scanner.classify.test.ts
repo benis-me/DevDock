@@ -20,4 +20,7 @@ describe('classifyScript', () => {
     expect(classifyScript('lint', 'eslint .')).toBe('one-shot')
     expect(classifyScript('test', 'vitest run')).toBe('one-shot')
   })
+  it('classifies vite build with intervening flags as one-shot', () => {
+    expect(classifyScript('build', 'vite --config vite.prod.ts build')).toBe('one-shot')
+  })
 })
