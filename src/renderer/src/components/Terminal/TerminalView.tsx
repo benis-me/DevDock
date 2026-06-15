@@ -11,6 +11,8 @@ export function TerminalView({ sessionKey, visible }: { sessionKey: string; visi
   const fitRef = useRef<FitAddon | null>(null)
 
   useEffect(() => {
+    let disposed = false
+
     const term = new Terminal({
       fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
       fontSize: 12,
@@ -29,7 +31,7 @@ export function TerminalView({ sessionKey, visible }: { sessionKey: string; visi
 
     // 回填历史缓冲
     window.devdock.terminal.getBuffer(sessionKey).then((buf) => {
-      if (buf) term.write(buf)
+      if (!disposed && buf) term.write(buf)
     })
 
     const off = window.devdock.onTerminalData((key, chunk) => {
@@ -51,6 +53,7 @@ export function TerminalView({ sessionKey, visible }: { sessionKey: string; visi
     setTimeout(doFit, 0)
 
     return () => {
+      disposed = true
       off()
       onInput.dispose()
       ro.disconnect()
