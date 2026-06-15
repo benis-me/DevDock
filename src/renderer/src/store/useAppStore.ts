@@ -52,7 +52,14 @@ export const useAppStore = create<AppState>((set, get) => ({
     })
     get().applyThemeClass()
 
-    window.devdock.onSessionStatus((s) => get().applyStatus(s))
+    window.devdock.onSessionStatus((s) => {
+      get().applyStatus(s)
+      if (s.status === 'errored') {
+        import('sonner').then(({ toast }) =>
+          toast.error('脚本运行出错', { description: s.scriptId.split('::')[1] })
+        )
+      }
+    })
     window.devdock.onSessionUrl((key, url) => get().applyUrl(key, url))
     window.devdock.onProjectUpdated((p) => get().applyProjectUpdated(p))
 

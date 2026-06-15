@@ -620,6 +620,8 @@ git commit -m "feat: wire IPC, preload bridge and AppController into main"
 
 ### Task 3: Zustand 状态层（含测试）
 
+> **2026-06-15 最终审查补丁：** `onSessionStatus` 回调在 `applyStatus` 之后，若 `s.status === 'errored'` 则额外触发 `toast.error('脚本运行出错', { description: s.scriptId.split('::')[1] })`（动态 import sonner）。
+
 **Files:**
 - Create: `src/renderer/src/store/useAppStore.ts`
 - Test: `src/renderer/src/store/useAppStore.test.ts`
@@ -1192,6 +1194,8 @@ git commit -m "feat: add sidebar with project list and row actions"
 ---
 
 ### Task 6: ScriptList 与 ScriptItem（含 RTL 测试）
+
+> **2026-06-15 最终审查补丁：** `WorkspaceBlock` 现在是可折叠组件。新增 `useState(false)` 控制 `collapsed`，monorepo header 改为 `<button>` 带 `ChevronRight`/`ChevronDown` 图标；脚本列表内容用 `{!collapsed && ...}` 包裹。仅当 `project.isMonorepo` 时显示可折叠 header。新增 imports：`useState` from react，`ChevronRight, ChevronDown` from lucide-react。
 
 **Files:**
 - Create: `src/renderer/src/components/ScriptList/ScriptList.tsx`, `src/renderer/src/components/ScriptList/ScriptItem.tsx`, `src/renderer/src/components/ScriptList/useElapsed.ts`

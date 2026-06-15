@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import type { JSX } from 'react'
 import type { Project, WorkspacePkg } from '@shared/types'
 import { ScriptItem } from './ScriptItem'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { ChevronRight, ChevronDown } from 'lucide-react'
 
 function Group({ title, children }: { title: string; children: React.ReactNode }): JSX.Element {
   return (
@@ -15,26 +17,37 @@ function Group({ title, children }: { title: string; children: React.ReactNode }
 }
 
 function WorkspaceBlock({ project, ws }: { project: Project; ws: WorkspacePkg }): JSX.Element {
+  const [collapsed, setCollapsed] = useState(false)
   const longRunning = ws.scripts.filter((s) => s.kind === 'long-running')
   const oneShot = ws.scripts.filter((s) => s.kind === 'one-shot')
   return (
     <div className="mb-4">
       {project.isMonorepo && (
-        <div className="mb-2 text-sm font-semibold">{ws.name} <span className="text-xs text-muted-foreground">{ws.relPath}</span></div>
+        <button
+          onClick={() => setCollapsed((c) => !c)}
+          className="mb-2 flex w-full items-center gap-1 text-sm font-semibold"
+        >
+          {collapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+          {ws.name} <span className="text-xs font-normal text-muted-foreground">{ws.relPath}</span>
+        </button>
       )}
-      {longRunning.length > 0 && (
-        <Group title="服务">
-          {longRunning.map((s) => (
-            <ScriptItem key={s.id} projectId={project.id} def={s} />
-          ))}
-        </Group>
-      )}
-      {oneShot.length > 0 && (
-        <Group title="任务">
-          {oneShot.map((s) => (
-            <ScriptItem key={s.id} projectId={project.id} def={s} />
-          ))}
-        </Group>
+      {!collapsed && (
+        <>
+          {longRunning.length > 0 && (
+            <Group title="服务">
+              {longRunning.map((s) => (
+                <ScriptItem key={s.id} projectId={project.id} def={s} />
+              ))}
+            </Group>
+          )}
+          {oneShot.length > 0 && (
+            <Group title="任务">
+              {oneShot.map((s) => (
+                <ScriptItem key={s.id} projectId={project.id} def={s} />
+              ))}
+            </Group>
+          )}
+        </>
       )}
     </div>
   )

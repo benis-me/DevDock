@@ -1202,6 +1202,14 @@ git commit -m "feat: add ProjectStore with persistence, migration and corruption
 
 ### Task 10: ProcessManager（依赖注入 pty，TDD）
 
+> **2026-06-15 最终审查补丁已应用：**
+> - `Session` 接口新增 `killTimer?: NodeJS.Timeout`
+> - 模块顶层新增 `NOOP_PTY` 用于 errored 会话占位
+> - `start()` 用 try/catch 包裹 spawner 调用；spawn 失败时注册 errored 会话并 emit，然后 return
+> - `pty.onExit` 先清 `killTimer` 再设状态（status 驱动从 onExit，不再在 stop 中同步设 exited）
+> - `stop()` 重写为 SIGTERM→SIGKILL 5s 升级：先设 killTimer，再 kill('SIGTERM')；同步 onExit 会清 timer
+> - 新增两条测试（共 7 条）：SIGKILL 升级测试 + spawn throw → errored 测试
+
 **Files:**
 - Create: `src/main/services/ProcessManager.ts`, `src/main/services/ptySpawner.ts`
 - Test: `src/main/services/ProcessManager.test.ts`
@@ -1483,15 +1491,15 @@ export class ProcessManager extends EventEmitter {
 - [ ] **Step 6: 运行测试确认通过**
 
 Run: `bunx vitest run src/main/services/ProcessManager.test.ts`
-Expected: PASS（5 个用例）。
+Expected: PASS（7 个用例：原 5 + SIGKILL 升级 + spawn throw errored）。
 
 - [ ] **Step 7: 运行全部单测并 Commit**
 
 Run: `bun run test`
-Expected: 所有测试文件全绿。
+Expected: 所有测试文件全绿（共 48 条）。
 ```bash
 git add -A
-git commit -m "feat: add ProcessManager with injected pty spawner and url detection"
+git commit -m "fix: SIGKILL escalation, spawn-failure errored state, errored toast, collapsible monorepo groups"
 ```
 
 ---

@@ -10,9 +10,19 @@ interface Session {
   command: string
   cwd: string
   stopRequested: boolean
+  killTimer?: NodeJS.Timeout
 }
 
 const BUFFER_LIMIT = 200_000
+
+const NOOP_PTY: IPty = {
+  pid: -1,
+  onData: () => {},
+  onExit: () => {},
+  write: () => {},
+  resize: () => {},
+  kill: () => {}
+}
 
 export interface StartOptions {
   scriptId: string
@@ -30,12 +40,35 @@ export class ProcessManager extends EventEmitter {
 
   start(opts: StartOptions): void {
     this.stop(opts.scriptId) // 重启幂等
-    const pty = this.spawner(opts.command, {
-      cwd: opts.cwd,
-      env: { ...process.env, ...opts.env, FORCE_COLOR: '1' },
-      cols: 80,
-      rows: 24
-    })
+    let pty: IPty
+    try {
+      pty = this.spawner(opts.command, {
+        cwd: opts.cwd,
+        env: { ...process.env, ...opts.env, FORCE_COLOR: '1' },
+        cols: 80,
+        rows: 24
+      })
+    } catch (err) {
+      const message = `\r\n[DevDock] 无法启动：${(err as Error)?.message ?? String(err)}\r\n`
+      const state: SessionState = {
+        scriptId: opts.scriptId,
+        pid: -1,
+        status: 'errored',
+        startedAt: Date.now()
+      }
+      this.sessions.set(opts.scriptId, {
+        state,
+        pty: NOOP_PTY,
+        buffer: message,
+        command: opts.command,
+        cwd: opts.cwd,
+        stopRequested: false
+      })
+      this.emit('data', opts.scriptId, message)
+      this.emit('status', { ...state })
+      return
+    }
+
     const state: SessionState = {
       scriptId: opts.scriptId,
       pid: pty.pid,
@@ -63,6 +96,10 @@ export class ProcessManager extends EventEmitter {
     })
 
     pty.onExit(({ exitCode }) => {
+      if (session.killTimer) {
+        clearTimeout(session.killTimer)
+        session.killTimer = undefined
+      }
       session.state.status = session.stopRequested || exitCode === 0 ? 'exited' : 'errored'
       session.state.exitCode = exitCode
       session.state.url = undefined
@@ -75,14 +112,17 @@ export class ProcessManager extends EventEmitter {
     if (!s) return
     if (s.state.status === 'starting' || s.state.status === 'running') {
       s.stopRequested = true
+      s.killTimer = setTimeout(() => {
+        try {
+          s.pty.kill('SIGKILL')
+        } catch {
+          /* already gone */
+        }
+      }, 5000)
       try {
-        s.pty.kill()
+        s.pty.kill('SIGTERM')
       } catch {
         /* already dead */
-      }
-      if ((s.state.status as SessionStatus) !== 'exited') {
-        s.state.status = 'exited'
-        this.emit('status', { ...s.state })
       }
     }
   }

@@ -78,4 +78,36 @@ describe('ProcessManager', () => {
     expect(fake.pty.kill).toHaveBeenCalled()
     expect(pm.getState('.#dev')?.status).toBe('exited')
   })
+
+  it('escalates to SIGKILL when the process ignores SIGTERM', () => {
+    vi.useFakeTimers()
+    const kills: Array<string | undefined> = []
+    const pty = {
+      pid: 7,
+      onData: () => {},
+      onExit: () => {},
+      write: () => {},
+      resize: () => {},
+      kill: (sig?: string) => kills.push(sig)
+    }
+    const pm = new ProcessManager(() => pty)
+    pm.start({ scriptId: '.#dev', command: 'x', cwd: '/x' })
+    pm.stop('.#dev')
+    expect(kills).toContain('SIGTERM')
+    vi.advanceTimersByTime(5000)
+    expect(kills).toContain('SIGKILL')
+    vi.useRealTimers()
+  })
+
+  it('emits errored status when spawning throws', () => {
+    const pm = new ProcessManager(() => {
+      throw new Error('cwd missing')
+    })
+    const statuses: string[] = []
+    pm.on('status', (s) => statuses.push(s.status))
+    pm.start({ scriptId: '.#dev', command: 'x', cwd: '/bad' })
+    expect(pm.getState('.#dev')?.status).toBe('errored')
+    expect(statuses).toContain('errored')
+    expect(pm.getBuffer('.#dev')).toContain('无法启动')
+  })
 })
