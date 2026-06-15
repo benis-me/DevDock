@@ -4,14 +4,44 @@ import { cn } from '@/lib/utils'
 import { sessionKey } from '@shared/util'
 import type { ScriptDef, SessionStatus } from '@shared/types'
 import { useElapsed } from './useElapsed'
-import { Play, Square, RotateCw, ExternalLink } from 'lucide-react'
+import { Play, Square, RotateCw, ArrowUpRight } from 'lucide-react'
 
 const DOT: Record<SessionStatus | 'idle', string> = {
-  idle: 'bg-muted-foreground/40',
-  starting: 'bg-amber-500 animate-pulse',
-  running: 'bg-emerald-500',
-  exited: 'bg-muted-foreground/40',
+  idle: 'bg-idle',
+  starting: 'bg-warn',
+  running: 'bg-run',
+  exited: 'bg-idle',
   errored: 'bg-destructive'
+}
+
+function IconBtn({
+  children,
+  title,
+  onClick,
+  tone = 'default'
+}: {
+  children: React.ReactNode
+  title: string
+  onClick: () => void
+  tone?: 'default' | 'danger' | 'run'
+}): JSX.Element {
+  return (
+    <button
+      title={title}
+      aria-label={title}
+      onClick={onClick}
+      className={cn(
+        'flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors',
+        tone === 'danger'
+          ? 'hover:bg-destructive/15 hover:text-destructive'
+          : tone === 'run'
+            ? 'hover:bg-run/15 hover:text-run'
+            : 'hover:bg-accent hover:text-foreground'
+      )}
+    >
+      {children}
+    </button>
+  )
 }
 
 export function ScriptItem({ projectId, def }: { projectId: string; def: ScriptDef }): JSX.Element {
@@ -31,49 +61,70 @@ export function ScriptItem({ projectId, def }: { projectId: string; def: ScriptD
     <div
       onClick={() => openTab(key)}
       className={cn(
-        'group flex cursor-pointer items-center gap-2 rounded-md border px-2.5 py-2',
-        selected ? 'border-ring bg-accent/60' : 'hover:bg-accent/40'
+        'group relative cursor-pointer rounded-lg border px-3 py-2 transition-colors',
+        selected
+          ? 'border-brand/40 bg-accent ring-1 ring-brand/30'
+          : 'border-border bg-card/40 hover:bg-accent/40'
       )}
     >
-      <span className={cn('h-2 w-2 shrink-0 rounded-full', DOT[status])} />
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <span className="font-medium">{def.name}</span>
-          {isActive && session && (
-            <span className="text-xs text-muted-foreground">PID {session.pid} · {elapsed}</span>
+      {selected && <span className="absolute inset-y-2 left-0 w-0.5 rounded-full bg-brand" />}
+
+      <div className="flex items-center gap-2.5">
+        <span
+          className={cn(
+            'h-2 w-2 shrink-0 rounded-full',
+            DOT[status],
+            status === 'starting' && 'animate-pulse'
           )}
-          {status === 'errored' && <span className="text-xs text-destructive">异常退出</span>}
+        />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="truncate text-[13px] font-medium text-foreground">{def.name}</span>
+            {isActive && session && (
+              <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
+                {session.pid > 0 ? `PID ${session.pid} · ` : ''}
+                {elapsed}
+              </span>
+            )}
+            {status === 'errored' && (
+              <span className="shrink-0 text-[10px] font-medium text-destructive">异常退出</span>
+            )}
+          </div>
+          <div className="truncate font-mono text-[11px] text-muted-foreground/80">
+            {def.command}
+          </div>
         </div>
-        <div className="truncate font-mono text-xs text-muted-foreground">{def.command}</div>
-        {session?.url && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              window.devdock.shell.openExternal(session.url!)
-            }}
-            className="mt-0.5 flex items-center gap-1 text-xs text-blue-500 hover:underline"
-          >
-            <ExternalLink className="h-3 w-3" />
-            {session.url}
-          </button>
-        )}
+
+        <div className="flex shrink-0 items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
+          {isActive ? (
+            <>
+              <IconBtn title="重启" onClick={() => restartScript(projectId, def.id)}>
+                <RotateCw className="h-3.5 w-3.5" />
+              </IconBtn>
+              <IconBtn title="停止" tone="danger" onClick={() => stopScript(key)}>
+                <Square className="h-3.5 w-3.5" />
+              </IconBtn>
+            </>
+          ) : (
+            <IconBtn title="启动" tone="run" onClick={() => startScript(projectId, def.id)}>
+              <Play className="h-3.5 w-3.5" />
+            </IconBtn>
+          )}
+        </div>
       </div>
-      <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-        {isActive ? (
-          <>
-            <button title="重启" onClick={() => restartScript(projectId, def.id)}>
-              <RotateCw className="h-4 w-4 text-muted-foreground hover:text-foreground" />
-            </button>
-            <button title="停止" onClick={() => stopScript(key)}>
-              <Square className="h-4 w-4 text-muted-foreground hover:text-destructive" />
-            </button>
-          </>
-        ) : (
-          <button title="启动" onClick={() => startScript(projectId, def.id)}>
-            <Play className="h-4 w-4 text-muted-foreground hover:text-emerald-500" />
-          </button>
-        )}
-      </div>
+
+      {session?.url && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            window.devdock.shell.openExternal(session.url!)
+          }}
+          className="mt-1.5 ml-[18px] flex items-center gap-1 font-mono text-[11px] text-brand hover:underline"
+        >
+          {session.url}
+          <ArrowUpRight className="h-3 w-3" />
+        </button>
+      )}
     </div>
   )
 }

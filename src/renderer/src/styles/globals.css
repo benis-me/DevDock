@@ -3,46 +3,57 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  --radius: 0.5rem;
+
+  --background: oklch(0.985 0.002 264);
+  --foreground: oklch(0.22 0.01 264);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.22 0.01 264);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.22 0.01 264);
+  --primary: oklch(0.25 0.01 264);
   --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --secondary: oklch(0.96 0.003 264);
+  --secondary-foreground: oklch(0.25 0.01 264);
+  --muted: oklch(0.965 0.003 264);
+  --muted-foreground: oklch(0.52 0.012 264);
+  --accent: oklch(0.945 0.005 264);
+  --accent-foreground: oklch(0.25 0.01 264);
+  --destructive: oklch(0.58 0.21 18);
+  --border: oklch(0.9 0.004 264);
+  --input: oklch(0.9 0.004 264);
+  --ring: oklch(0.55 0.16 256);
+
+  --brand: oklch(0.55 0.16 256);
+  --run: oklch(0.6 0.16 150);
+  --warn: oklch(0.68 0.15 70);
+  --idle: oklch(0.72 0.01 264);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --background: oklch(0.17 0.006 264);
+  --foreground: oklch(0.95 0.003 264);
+  --card: oklch(0.205 0.006 264);
+  --card-foreground: oklch(0.95 0.003 264);
+  --popover: oklch(0.215 0.006 264);
+  --popover-foreground: oklch(0.95 0.003 264);
+  --primary: oklch(0.92 0.003 264);
+  --primary-foreground: oklch(0.2 0.006 264);
+  --secondary: oklch(0.26 0.006 264);
+  --secondary-foreground: oklch(0.95 0.003 264);
+  --muted: oklch(0.255 0.006 264);
+  --muted-foreground: oklch(0.66 0.012 264);
+  --accent: oklch(0.275 0.007 264);
+  --accent-foreground: oklch(0.97 0.003 264);
+  --destructive: oklch(0.64 0.2 20);
+  --border: oklch(1 0 0 / 9%);
+  --input: oklch(1 0 0 / 12%);
+  --ring: oklch(0.65 0.14 256);
+
+  --brand: oklch(0.7 0.13 256);
+  --run: oklch(0.72 0.17 152);
+  --warn: oklch(0.8 0.15 80);
+  --idle: oklch(0.5 0.01 264);
 }
 
 @theme inline {
@@ -64,11 +75,58 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-brand: var(--brand);
+  --color-run: var(--run);
+  --color-warn: var(--warn);
+  --color-idle: var(--idle);
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 }
 
-* { border-color: var(--color-border); }
-body { background: var(--color-background); color: var(--color-foreground); margin: 0; }
-html, body, #root { height: 100%; }
+* {
+  border-color: var(--color-border);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* thin, unobtrusive scrollbars */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: color-mix(in oklab, var(--color-foreground) 16%, transparent);
+  border-radius: 9999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in oklab, var(--color-foreground) 28%, transparent);
+  background-clip: content-box;
+}
+
+/* frameless title-bar drag regions */
+.drag {
+  -webkit-app-region: drag;
+}
+.no-drag {
+  -webkit-app-region: no-drag;
+}

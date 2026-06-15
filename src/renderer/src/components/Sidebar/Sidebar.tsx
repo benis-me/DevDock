@@ -1,8 +1,8 @@
 import type { JSX } from 'react'
 import { useAppStore } from '@/store/useAppStore'
 import { ProjectRow } from './ProjectRow'
-import { Button } from '@/components/ui/button'
-import { Plus } from 'lucide-react'
+import { ThemeToggle } from '@/components/ThemeToggle'
+import { SquareTerminal, Plus, FolderPlus } from 'lucide-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 
 export function Sidebar(): JSX.Element {
@@ -10,31 +10,52 @@ export function Sidebar(): JSX.Element {
   const addProject = useAppStore((s) => s.addProject)
 
   return (
-    <aside className="flex w-64 shrink-0 flex-col border-r bg-card/40">
-      <div
-        className="flex items-center justify-between px-3 py-2.5"
-        style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
-      >
-        <span className="pl-14 font-semibold">DevDock</span>
-        <Button
-          variant="ghost"
-          size="icon"
+    <aside className="flex w-64 shrink-0 flex-col border-r border-border bg-card/30">
+      {/* brand / drag title bar — pl clears macOS traffic lights */}
+      <div className="drag flex h-11 items-center pl-20 pr-3">
+        <div className="flex items-center gap-2">
+          <SquareTerminal className="h-[18px] w-[18px] text-brand" strokeWidth={2.25} />
+          <span className="text-[13px] font-medium tracking-tight text-foreground/75">DevDock</span>
+        </div>
+      </div>
+
+      {/* section header */}
+      <div className="flex items-center justify-between px-3 pb-1 pt-1.5">
+        <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+          项目
+        </span>
+        <button
           onClick={addProject}
           title="添加项目"
-          style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+          aria-label="添加项目"
+          className="no-drag flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
         >
           <Plus className="h-4 w-4" />
-        </Button>
+        </button>
       </div>
+
+      {/* project list */}
       <ScrollArea className="flex-1">
-        <div className="flex flex-col gap-0.5 p-2">
+        <div className="flex flex-col gap-0.5 px-2 pb-2">
           {projects.length === 0 ? (
-            <p className="px-2 py-4 text-xs text-muted-foreground">点击右上角 + 添加项目文件夹</p>
+            <button
+              onClick={addProject}
+              className="no-drag mt-2 flex flex-col items-center gap-2 rounded-lg border border-dashed border-border px-3 py-7 text-center text-muted-foreground transition-colors hover:border-brand/50 hover:text-foreground"
+            >
+              <FolderPlus className="h-5 w-5" strokeWidth={1.75} />
+              <span className="text-xs">添加项目文件夹</span>
+            </button>
           ) : (
             projects.map((p) => <ProjectRow key={p.id} project={p} />)
           )}
         </div>
       </ScrollArea>
+
+      {/* footer — theme toggle bottom-left */}
+      <div className="flex items-center justify-between border-t border-border px-3 py-2">
+        <ThemeToggle />
+        <span className="font-mono text-[10px] text-muted-foreground/60">v0.1.0</span>
+      </div>
     </aside>
   )
 }
