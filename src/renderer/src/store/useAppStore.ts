@@ -56,6 +56,20 @@ export const useAppStore = create<AppState>((set, get) => ({
     window.devdock.onSessionUrl((key, url) => get().applyUrl(key, url))
     window.devdock.onProjectUpdated((p) => get().applyProjectUpdated(p))
 
+    window.devdock.onScriptChanged((key) => {
+      const [projectId, scriptId] = key.split('::')
+      // 动态导入 toast，避免在测试 node 环境下加载 UI
+      import('sonner').then(({ toast }) => {
+        toast('脚本定义已更新', {
+          description: scriptId,
+          action: {
+            label: '重启',
+            onClick: () => get().restartScript(projectId, scriptId)
+          }
+        })
+      })
+    })
+
     const mql = window.matchMedia('(prefers-color-scheme: dark)')
     mql.addEventListener('change', () => {
       if (get().theme === 'system') get().applyThemeClass()
