@@ -48,6 +48,28 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
 })
 
-app.on('before-quit', () => {
-  controller?.shutdown()
+let quitting = false
+app.on('before-quit', (e) => {
+  if (quitting) return
+  const running = controller
+    ?.listSessions()
+    .filter((s) => s.status === 'running' || s.status === 'starting')
+  if (running && running.length > 0) {
+    e.preventDefault()
+    const { dialog } = require('electron')
+    const choice = dialog.showMessageBoxSync(mainWindow!, {
+      type: 'question',
+      buttons: ['退出并终止', '取消'],
+      defaultId: 0,
+      cancelId: 1,
+      message: `有 ${running.length} 个脚本正在运行，确定退出并终止它们吗？`
+    })
+    if (choice === 0) {
+      quitting = true
+      controller.shutdown()
+      app.quit()
+    }
+  } else {
+    controller?.shutdown()
+  }
 })
