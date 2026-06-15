@@ -1,0 +1,116 @@
+import { EventEmitter } from 'events'
+import type { SessionState, SessionStatus } from '@shared/types'
+import { detectUrl } from './UrlDetector'
+import { realPtySpawner, type IPty, type PtySpawner } from './ptySpawner'
+
+interface Session {
+  state: SessionState
+  pty: IPty
+  buffer: string
+  command: string
+  cwd: string
+}
+
+const BUFFER_LIMIT = 200_000
+
+export interface StartOptions {
+  scriptId: string
+  command: string
+  cwd: string
+  env?: NodeJS.ProcessEnv
+}
+
+export class ProcessManager extends EventEmitter {
+  private sessions = new Map<string, Session>()
+
+  constructor(private readonly spawner: PtySpawner = realPtySpawner) {
+    super()
+  }
+
+  start(opts: StartOptions): void {
+    this.stop(opts.scriptId) // 重启幂等
+    const pty = this.spawner(opts.command, {
+      cwd: opts.cwd,
+      env: { ...process.env, ...opts.env, FORCE_COLOR: '1' },
+      cols: 80,
+      rows: 24
+    })
+    const state: SessionState = {
+      scriptId: opts.scriptId,
+      pid: pty.pid,
+      status: 'starting',
+      startedAt: Date.now()
+    }
+    const session: Session = { state, pty, buffer: '', command: opts.command, cwd: opts.cwd }
+    this.sessions.set(opts.scriptId, session)
+    this.emit('status', { ...state })
+
+    pty.onData((data) => {
+      session.buffer = (session.buffer + data).slice(-BUFFER_LIMIT)
+      this.emit('data', opts.scriptId, data)
+      if (session.state.status === 'starting') {
+        session.state.status = 'running'
+        this.emit('status', { ...session.state })
+      }
+      if (!session.state.url) {
+        const url = detectUrl(data)
+        if (url) {
+          session.state.url = url
+          this.emit('url', opts.scriptId, url)
+        }
+      }
+    })
+
+    pty.onExit(({ exitCode }) => {
+      session.state.status = exitCode === 0 ? 'exited' : exitCode > 0 ? 'exited' : 'errored'
+      session.state.exitCode = exitCode
+      session.state.url = undefined
+      this.emit('status', { ...session.state })
+    })
+  }
+
+  stop(scriptId: string): void {
+    const s = this.sessions.get(scriptId)
+    if (!s) return
+    if (s.state.status === 'starting' || s.state.status === 'running') {
+      try {
+        s.pty.kill()
+      } catch {
+        /* already dead */
+      }
+      if ((s.state.status as SessionStatus) !== 'exited') {
+        s.state.status = 'exited'
+        this.emit('status', { ...s.state })
+      }
+    }
+  }
+
+  restart(opts: StartOptions): void {
+    this.start(opts)
+  }
+
+  write(scriptId: string, data: string): void {
+    this.sessions.get(scriptId)?.pty.write(data)
+  }
+
+  resize(scriptId: string, cols: number, rows: number): void {
+    this.sessions.get(scriptId)?.pty.resize(cols, rows)
+  }
+
+  getBuffer(scriptId: string): string {
+    return this.sessions.get(scriptId)?.buffer ?? ''
+  }
+
+  getState(scriptId: string): SessionState | undefined {
+    const s = this.sessions.get(scriptId)
+    return s ? { ...s.state } : undefined
+  }
+
+  list(): SessionState[] {
+    return [...this.sessions.values()].map((s) => ({ ...s.state }))
+  }
+
+  killAll(): void {
+    for (const id of this.sessions.keys()) this.stop(id)
+  }
+}
