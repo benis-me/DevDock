@@ -21,7 +21,11 @@ export interface DevDockApi {
   }
   shell: {
     openExternal(url: string): Promise<void>
-    revealInFinder(path: string): Promise<void>
+    openPath(path: string): Promise<void>
+  }
+  env: {
+    read(path: string): Promise<string>
+    write(path: string, content: string): Promise<void>
   }
   ui: {
     getState(): Promise<UiState>
@@ -33,6 +37,7 @@ export interface DevDockApi {
   onSessionUrl(cb: (sessionKey: string, url: string) => void): () => void
   onProjectUpdated(cb: (project: Project) => void): () => void
   onScriptChanged(cb: (sessionKey: string) => void): () => void
+  onEnvChanged(cb: (path: string) => void): () => void
 }
 
 declare global {

@@ -51,6 +51,7 @@ export function ProjectRow({ project }: { project: Project }): JSX.Element {
 
   const [renaming, setRenaming] = useState(false)
   const [confirmRemove, setConfirmRemove] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
   const [draft, setDraft] = useState(project.name)
 
   const commitRename = (): void => {
@@ -64,9 +65,14 @@ export function ProjectRow({ project }: { project: Project }): JSX.Element {
     <>
       <div
         onClick={() => selectProject(project.id)}
+        onDoubleClick={() => {
+          setDraft(project.name)
+          setRenaming(true)
+        }}
+        title="双击重命名"
         className={cn(
           'group relative flex cursor-pointer items-center gap-2.5 rounded-md py-1.5 pl-2.5 pr-1.5 transition-colors',
-          selected ? 'bg-accent' : 'hover:bg-accent/50'
+          selected ? 'bg-accent' : menuOpen ? 'bg-accent/50' : 'hover:bg-accent/50'
         )}
       >
         {selected && (
@@ -108,9 +114,9 @@ export function ProjectRow({ project }: { project: Project }): JSX.Element {
           </span>
         )}
 
-        {/* hover actions: delete + menu */}
+        {/* hover actions: delete + menu (kept visible while the menu is open) */}
         <div
-          className="hidden items-center gap-0.5 group-hover:flex"
+          className={cn('items-center gap-0.5', menuOpen ? 'flex' : 'hidden group-hover:flex')}
           onClick={(e) => e.stopPropagation()}
         >
           <button
@@ -121,7 +127,7 @@ export function ProjectRow({ project }: { project: Project }): JSX.Element {
           >
             <Trash2 className="h-3.5 w-3.5" />
           </button>
-          <DropdownMenu>
+          <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
             <DropdownMenuTrigger asChild>
               <button
                 title="更多"
@@ -131,7 +137,7 @@ export function ProjectRow({ project }: { project: Project }): JSX.Element {
                 <MoreHorizontal className="h-4 w-4" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-44">
+            <DropdownMenuContent align="end" sideOffset={6} className="w-44 shadow-lg">
               <DropdownMenuItem
                 onClick={() => {
                   setDraft(project.name)
@@ -143,8 +149,8 @@ export function ProjectRow({ project }: { project: Project }): JSX.Element {
               <DropdownMenuItem onClick={() => rescanProject(project.id)}>
                 <RefreshCw /> 重新扫描
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => window.devdock.shell.revealInFinder(project.path)}>
-                <FolderOpen /> 在 Finder 显示
+              <DropdownMenuItem onClick={() => window.devdock.shell.openPath(project.path)}>
+                <FolderOpen /> 打开文件夹
               </DropdownMenuItem>
               {project.missing && (
                 <DropdownMenuItem onClick={() => relocateProject(project.id)}>

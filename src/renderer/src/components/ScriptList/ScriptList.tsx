@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { JSX } from 'react'
 import type { Project, WorkspacePkg } from '@shared/types'
 import { ScriptItem } from './ScriptItem'
-import { ScrollArea } from '@/components/ui/scroll-area'
+import { EnvItem } from '@/components/Env/EnvItem'
 import { cn } from '@/lib/utils'
 import { ChevronRight, ChevronDown, FileWarning } from 'lucide-react'
 
@@ -23,7 +23,7 @@ function Group({
         </span>
         <span className="text-[11px] tabular-nums text-muted-foreground/60">{count}</span>
       </div>
-      <div className="flex flex-col gap-1.5">{children}</div>
+      <div className="flex flex-col gap-0.5">{children}</div>
     </div>
   )
 }
@@ -83,19 +83,41 @@ export function ScriptList({ project }: { project: Project }): JSX.Element {
     )
   }
 
-  const empty = project.workspaces.every((w) => w.scripts.length === 0)
+  const noScripts = project.workspaces.every((w) => w.scripts.length === 0)
+  const envFiles = project.envFiles ?? []
 
   return (
-    <ScrollArea className="w-[42%] min-w-[320px] shrink-0 border-r border-border">
+    <div className="w-[42%] min-w-[320px] shrink-0 overflow-y-auto overflow-x-hidden border-r border-border">
       <div className="p-3">
-        {empty ? (
-          <p className="px-1 py-10 text-center text-xs text-muted-foreground">未发现可运行的脚本</p>
-        ) : (
+        {!noScripts &&
           project.workspaces.map((ws) => (
             <WorkspaceBlock key={ws.relPath} project={project} ws={ws} />
-          ))
+          ))}
+
+        {envFiles.length > 0 && (
+          <div className="mb-4 last:mb-0">
+            <div className="mb-1.5 flex items-center gap-2 px-1">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                环境变量
+              </span>
+              <span className="text-[11px] tabular-nums text-muted-foreground/60">
+                {envFiles.length}
+              </span>
+            </div>
+            <div className="flex flex-col gap-0.5">
+              {envFiles.map((f) => (
+                <EnvItem key={f.path} file={f} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {noScripts && envFiles.length === 0 && (
+          <p className="px-1 py-10 text-center text-xs text-muted-foreground">
+            未发现脚本或 .env 文件
+          </p>
         )}
       </div>
-    </ScrollArea>
+    </div>
   )
 }

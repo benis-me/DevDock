@@ -13,7 +13,9 @@ export const IPC = {
   TerminalResize: 'terminal:resize',
   TerminalGetBuffer: 'terminal:getBuffer',
   ShellOpenExternal: 'shell:openExternal',
-  ShellRevealInFinder: 'shell:revealInFinder',
+  ShellOpenPath: 'shell:openPath',
+  EnvRead: 'env:read',
+  EnvWrite: 'env:write',
   DialogPickDirectory: 'dialog:pickDirectory',
   UiGetState: 'ui:getState',
   UiSetState: 'ui:setState',
@@ -23,5 +25,6 @@ export const IPC = {
   EvtSessionStatus: 'evt:session:status',
   EvtSessionUrl: 'evt:session:url',
   EvtProjectUpdated: 'evt:project:updated',
-  EvtScriptChanged: 'evt:script:changed'
+  EvtScriptChanged: 'evt:script:changed',
+  EvtEnvChanged: 'evt:env:changed'
 } as const

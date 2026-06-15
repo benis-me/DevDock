@@ -17,6 +17,12 @@ export interface WorkspacePkg {
   scripts: ScriptDef[]
 }
 
+export interface EnvFile {
+  name: string          // ".env" / ".env.local" / ".env.production"
+  relPath: string       // 所在目录相对项目根，根目录为 "."
+  path: string          // 绝对路径（唯一键）
+}
+
 export interface Project {
   id: string
   name: string
@@ -24,6 +30,7 @@ export interface Project {
   packageManager: PackageManager
   isMonorepo: boolean
   workspaces: WorkspacePkg[]
+  envFiles: EnvFile[]
   addedAt: number
   missing?: boolean
 }

@@ -12,6 +12,7 @@ export function registerIpc(controller: AppController, getWindow: () => BrowserW
   controller.on('session:url', (key, url) => send(IPC.EvtSessionUrl, key, url))
   controller.on('project:updated', (p) => send(IPC.EvtProjectUpdated, p))
   controller.on('script:changed', (key) => send(IPC.EvtScriptChanged, key))
+  controller.on('env:changed', (p) => send(IPC.EvtEnvChanged, p))
 
   ipcMain.handle(IPC.ProjectsList, () => controller.listProjects())
   ipcMain.handle(IPC.ProjectsAdd, async () => {
@@ -41,7 +42,10 @@ export function registerIpc(controller: AppController, getWindow: () => BrowserW
   ipcMain.handle(IPC.TerminalGetBuffer, (_e, key: string) => controller.getBuffer(key))
 
   ipcMain.handle(IPC.ShellOpenExternal, (_e, url: string) => shell.openExternal(url))
-  ipcMain.handle(IPC.ShellRevealInFinder, (_e, p: string) => shell.showItemInFolder(p))
+  ipcMain.handle(IPC.ShellOpenPath, (_e, p: string) => shell.openPath(p))
+
+  ipcMain.handle(IPC.EnvRead, (_e, p: string) => controller.readEnvFile(p))
+  ipcMain.handle(IPC.EnvWrite, (_e, p: string, content: string) => controller.writeEnvFile(p, content))
 
   ipcMain.handle(IPC.UiGetState, () => controller.getUiState())
   ipcMain.handle(IPC.UiSetState, (_e, partial) => {

@@ -2,12 +2,14 @@ import type { JSX } from 'react'
 import { useAppStore } from '@/store/useAppStore'
 import { ScriptList } from '@/components/ScriptList/ScriptList'
 import { TerminalDock } from '@/components/Terminal/TerminalDock'
+import { EnvEditor } from '@/components/Env/EnvEditor'
 import { RefreshCw, FolderOpen, SquareTerminal, Plus } from 'lucide-react'
 
 export function ProjectView(): JSX.Element {
   const project = useAppStore((s) => s.projects.find((p) => p.id === s.selectedProjectId))
   const rescan = useAppStore((s) => s.rescanProject)
   const addProject = useAppStore((s) => s.addProject)
+  const activeEnvPath = useAppStore((s) => s.activeEnvPath)
 
   if (!project) {
     return (
@@ -56,9 +58,9 @@ export function ProjectView(): JSX.Element {
           <RefreshCw className="h-4 w-4" />
         </button>
         <button
-          title="在 Finder 中打开"
-          aria-label="在 Finder 中打开"
-          onClick={() => window.devdock.shell.revealInFinder(project.path)}
+          title="打开文件夹"
+          aria-label="打开文件夹"
+          onClick={() => window.devdock.shell.openPath(project.path)}
           className="no-drag flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
         >
           <FolderOpen className="h-4 w-4" />
@@ -66,7 +68,7 @@ export function ProjectView(): JSX.Element {
       </header>
       <div className="flex min-h-0 flex-1">
         <ScriptList project={project} />
-        <TerminalDock />
+        {activeEnvPath ? <EnvEditor path={activeEnvPath} /> : <TerminalDock />}
       </div>
     </div>
   )

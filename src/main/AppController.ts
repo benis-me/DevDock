@@ -1,7 +1,8 @@
 import { EventEmitter } from 'events'
-import { existsSync } from 'fs'
-import { basename } from 'path'
+import { existsSync, readFileSync, writeFileSync } from 'fs'
+import { basename, join } from 'path'
 import { randomUUID } from 'crypto'
+import { parse as parseDotenv } from 'dotenv'
 import type { Config, Project, ScriptDef, SessionState } from '@shared/types'
 import { sessionKey, runCommand } from '@shared/util'
 import { ProjectStore } from './services/ProjectStore'
@@ -38,7 +39,10 @@ export class AppController extends EventEmitter {
   }
 
   startWatchingAll(): void {
-    for (const p of this.config.projects) if (!p.missing) this.watcher.watch(p)
+    // 重扫每个项目以填充 envFiles（旧配置可能没有）并建立监听
+    for (const p of this.config.projects) {
+      if (!p.missing) this.rescanProject(p.id)
+    }
   }
 
   addProjectFromPath(dirPath: string): Project | null {
@@ -51,6 +55,7 @@ export class AppController extends EventEmitter {
       packageManager: scanned.packageManager,
       isMonorepo: scanned.isMonorepo,
       workspaces: scanned.workspaces,
+      envFiles: scanned.envFiles,
       addedAt: Date.now()
     }
     this.config.projects.push(project)
@@ -99,9 +104,27 @@ export class AppController extends EventEmitter {
     p.workspaces = scanned.workspaces
     p.isMonorepo = scanned.isMonorepo
     p.packageManager = scanned.packageManager
+    p.envFiles = scanned.envFiles
     this.persist()
     this.watcher.watch(p)
     return { project: p, diff }
+  }
+
+  // ---- env files ----
+  readEnvFile(filePath: string): string {
+    try {
+      return readFileSync(filePath, 'utf8')
+    } catch {
+      return ''
+    }
+  }
+
+  writeEnvFile(filePath: string, content: string): void {
+    try {
+      writeFileSync(filePath, content, 'utf8')
+    } catch {
+      /* ignore write failure */
+    }
   }
 
   // ---- scripts ----
@@ -126,8 +149,31 @@ export class AppController extends EventEmitter {
     this.pm.start({
       scriptId: sessionKey(projectId, scriptId),
       command: runCommand(project.packageManager, def.name),
-      cwd: def.cwd
+      cwd: def.cwd,
+      env: this.loadRunEnv(project.path, def.cwd)
     })
+  }
+
+  // 把项目的 .env / .env.local 注入到脚本运行环境（先根目录后脚本目录，后者优先）
+  private loadRunEnv(root: string, cwd: string): Record<string, string> {
+    const merged: Record<string, string> = {}
+    const files = [
+      join(root, '.env'),
+      join(root, '.env.local'),
+      join(cwd, '.env'),
+      join(cwd, '.env.local')
+    ]
+    const seen = new Set<string>()
+    for (const f of files) {
+      if (seen.has(f) || !existsSync(f)) continue
+      seen.add(f)
+      try {
+        Object.assign(merged, parseDotenv(readFileSync(f)))
+      } catch {
+        /* ignore malformed env file */
+      }
+    }
+    return merged
   }
 
   stopSession(key: string): void {
@@ -162,10 +208,13 @@ export class AppController extends EventEmitter {
   }
 
   // ---- watch callback ----
-  handleWatchChange(projectId: string): void {
+  handleWatchChange(projectId: string, changedPath?: string): void {
     const { project, diff } = this.rescanProject(projectId)
     if (!project) return
     this.emit('project:updated', project)
+    if (changedPath && /(^|[\\/])\.env(\..+)?$/.test(changedPath)) {
+      this.emit('env:changed', changedPath)
+    }
     const running = new Set(this.pm.list().map((s) => s.scriptId))
     for (const id of [...diff.changed, ...diff.removed]) {
       const key = sessionKey(projectId, id)

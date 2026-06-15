@@ -47,7 +47,7 @@ function IconBtn({
 export function ScriptItem({ projectId, def }: { projectId: string; def: ScriptDef }): JSX.Element {
   const key = sessionKey(projectId, def.id)
   const session = useAppStore((s) => s.sessions[key])
-  const selected = useAppStore((s) => s.selectedScriptId === key)
+  const selected = useAppStore((s) => s.selectedScriptId === key && !s.activeEnvPath)
   const openTab = useAppStore((s) => s.openTab)
   const startScript = useAppStore((s) => s.startScript)
   const stopScript = useAppStore((s) => s.stopScript)
@@ -61,15 +61,13 @@ export function ScriptItem({ projectId, def }: { projectId: string; def: ScriptD
     <div
       onClick={() => openTab(key)}
       className={cn(
-        'group relative cursor-pointer rounded-lg border px-3 py-2 transition-colors',
-        selected
-          ? 'border-brand/50 bg-accent ring-1 ring-brand/30'
-          : status === 'running'
-            ? 'border-run/30 bg-card/40 hover:bg-accent/40'
-            : 'border-border bg-card/40 hover:bg-accent/40'
+        'group relative cursor-pointer overflow-hidden rounded-md px-2.5 py-2 transition-colors',
+        selected ? 'bg-accent' : 'hover:bg-accent/50'
       )}
     >
-      {selected && <span className="absolute inset-y-2 left-0 w-0.5 rounded-full bg-brand" />}
+      {selected && (
+        <span className="absolute inset-y-1.5 left-0 w-[3px] rounded-r-full bg-brand" />
+      )}
 
       <div className="flex items-center gap-2.5">
         <span

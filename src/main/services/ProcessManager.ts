@@ -103,6 +103,9 @@ export class ProcessManager extends EventEmitter {
       session.state.status = session.stopRequested || exitCode === 0 ? 'exited' : 'errored'
       session.state.exitCode = exitCode
       session.state.url = undefined
+      const note = `\r\n\x1b[2m── DevDock：进程已结束（退出码 ${exitCode}）──\x1b[0m\r\n`
+      session.buffer = (session.buffer + note).slice(-BUFFER_LIMIT)
+      this.emit('data', opts.scriptId, note)
       this.emit('status', { ...session.state })
     })
   }

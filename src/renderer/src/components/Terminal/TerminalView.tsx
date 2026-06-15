@@ -3,15 +3,16 @@ import { useEffect, useRef } from 'react'
 import { Terminal, type ITheme } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import { WebLinksAddon } from '@xterm/addon-web-links'
-import { useAppStore } from '@/store/useAppStore'
 import '@xterm/xterm/css/xterm.css'
 
-const DARK_THEME = {
-  background: '#00000000',
+export const TERMINAL_BG = '#0c0f16'
+
+const TERMINAL_THEME: ITheme = {
+  background: TERMINAL_BG,
   foreground: '#d4d6dc',
-  cursor: '#4ade80',
-  cursorAccent: '#0c0f18',
-  selectionBackground: '#23433a',
+  cursor: '#d4d6dc',
+  cursorAccent: TERMINAL_BG,
+  selectionBackground: '#2c2f36',
   black: '#3b3f47',
   red: '#f87171',
   green: '#34d399',
@@ -30,34 +31,6 @@ const DARK_THEME = {
   brightWhite: '#f3f4f6'
 }
 
-const LIGHT_THEME = {
-  background: '#00000000',
-  foreground: '#3a3f47',
-  cursor: '#16a34a',
-  cursorAccent: '#ffffff',
-  selectionBackground: '#bbf7d0',
-  black: '#3b3f47',
-  red: '#dc2626',
-  green: '#059669',
-  yellow: '#b45309',
-  blue: '#2563eb',
-  magenta: '#7c3aed',
-  cyan: '#0891b2',
-  white: '#d4d6dc',
-  brightBlack: '#9ca3af',
-  brightRed: '#ef4444',
-  brightGreen: '#10b981',
-  brightYellow: '#d97706',
-  brightBlue: '#3b82f6',
-  brightMagenta: '#8b5cf6',
-  brightCyan: '#06b6d4',
-  brightWhite: '#111827'
-}
-
-function currentTheme(): ITheme {
-  return document.documentElement.classList.contains('dark') ? DARK_THEME : LIGHT_THEME
-}
-
 export function TerminalView({
   sessionKey,
   visible
@@ -68,19 +41,18 @@ export function TerminalView({
   const ref = useRef<HTMLDivElement>(null)
   const termRef = useRef<Terminal | null>(null)
   const fitRef = useRef<FitAddon | null>(null)
-  const theme = useAppStore((s) => s.theme)
 
   useEffect(() => {
     let disposed = false
 
     const term = new Terminal({
-      fontFamily: '"JetBrains Mono Variable", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
+      fontFamily:
+        '"JetBrains Mono Variable", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
       fontSize: 12,
       lineHeight: 1.35,
       cursorBlink: true,
-      allowTransparency: true,
       scrollback: 5000,
-      theme: currentTheme()
+      theme: TERMINAL_THEME
     })
     const fit = new FitAddon()
     term.loadAddon(fit)
@@ -119,16 +91,16 @@ export function TerminalView({
     }
   }, [sessionKey])
 
-  // keep the terminal palette in sync with light/dark theme
-  useEffect(() => {
-    if (termRef.current) termRef.current.options.theme = currentTheme()
-  }, [theme])
-
   useEffect(() => {
     if (visible) setTimeout(() => fitRef.current?.fit(), 0)
   }, [visible])
 
   return (
-    <div ref={ref} className="h-full w-full" style={{ display: visible ? 'block' : 'none' }} />
+    <div
+      className="h-full w-full px-3 py-2"
+      style={{ background: TERMINAL_BG, display: visible ? 'block' : 'none' }}
+    >
+      <div ref={ref} className="h-full w-full" />
+    </div>
   )
 }

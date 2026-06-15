@@ -29,7 +29,11 @@ const api: DevDockApi = {
   },
   shell: {
     openExternal: (url) => ipcRenderer.invoke(IPC.ShellOpenExternal, url),
-    revealInFinder: (p) => ipcRenderer.invoke(IPC.ShellRevealInFinder, p)
+    openPath: (p) => ipcRenderer.invoke(IPC.ShellOpenPath, p)
+  },
+  env: {
+    read: (p) => ipcRenderer.invoke(IPC.EnvRead, p),
+    write: (p, content) => ipcRenderer.invoke(IPC.EnvWrite, p, content)
   },
   ui: {
     getState: () => ipcRenderer.invoke(IPC.UiGetState),
@@ -40,7 +44,8 @@ const api: DevDockApi = {
   onSessionStatus: (cb) => sub(IPC.EvtSessionStatus, cb),
   onSessionUrl: (cb) => sub(IPC.EvtSessionUrl, cb),
   onProjectUpdated: (cb) => sub(IPC.EvtProjectUpdated, cb),
-  onScriptChanged: (cb) => sub(IPC.EvtScriptChanged, cb)
+  onScriptChanged: (cb) => sub(IPC.EvtScriptChanged, cb),
+  onEnvChanged: (cb) => sub(IPC.EvtEnvChanged, cb)
 }
 
 contextBridge.exposeInMainWorld('devdock', api)

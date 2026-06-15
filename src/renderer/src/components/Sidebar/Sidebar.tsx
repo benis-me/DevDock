@@ -2,24 +2,16 @@ import type { JSX } from 'react'
 import { useAppStore } from '@/store/useAppStore'
 import { ProjectRow } from './ProjectRow'
 import { ThemeToggle } from '@/components/ThemeToggle'
-import { SquareTerminal, Plus, FolderPlus } from 'lucide-react'
-import { ScrollArea } from '@/components/ui/scroll-area'
+import { Plus, FolderPlus } from 'lucide-react'
 
 export function Sidebar(): JSX.Element {
   const projects = useAppStore((s) => s.projects)
   const addProject = useAppStore((s) => s.addProject)
 
   return (
-    <aside className="sheen flex w-64 shrink-0 flex-col border-r border-border bg-card/40">
-      {/* brand / drag title bar — pl clears macOS traffic lights */}
-      <div className="drag flex h-11 items-center pl-20 pr-3">
-        <div className="flex items-center gap-2">
-          <span className="flex h-6 w-6 items-center justify-center rounded-md bg-brand/12 text-brand">
-            <SquareTerminal className="h-[15px] w-[15px]" strokeWidth={2.25} />
-          </span>
-          <span className="text-[13px] font-semibold tracking-tight text-foreground">DevDock</span>
-        </div>
-      </div>
+    <aside className="sheen flex w-64 shrink-0 flex-col border-r border-border bg-card/60">
+      {/* drag strip — clears the macOS traffic lights and lets the window be dragged */}
+      <div className="drag h-9 shrink-0" />
 
       {/* section header */}
       <div className="flex items-center justify-between px-3 pb-1 pt-1.5">
@@ -37,7 +29,7 @@ export function Sidebar(): JSX.Element {
       </div>
 
       {/* project list */}
-      <ScrollArea className="flex-1">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden">
         <div className="flex flex-col gap-0.5 px-2 pb-2">
           {projects.length === 0 ? (
             <button
@@ -51,7 +43,7 @@ export function Sidebar(): JSX.Element {
             projects.map((p) => <ProjectRow key={p.id} project={p} />)
           )}
         </div>
-      </ScrollArea>
+      </div>
 
       {/* footer — theme toggle bottom-left */}
       <div className="flex items-center justify-between border-t border-border px-3 py-2">

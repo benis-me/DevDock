@@ -1,8 +1,10 @@
-import { existsSync, readFileSync } from 'fs'
+import { existsSync, readFileSync, readdirSync, type Dirent } from 'fs'
 import { dirname, join, relative, sep } from 'path'
 import fg from 'fast-glob'
 import yaml from 'js-yaml'
-import type { PackageManager, ScriptDef, ScriptKind, WorkspacePkg } from '@shared/types'
+import type { EnvFile, PackageManager, ScriptDef, ScriptKind, WorkspacePkg } from '@shared/types'
+
+const ENV_FILE = /^\.env(\..+)?$/
 
 export function detectPackageManager(dir: string): PackageManager {
   if (existsSync(join(dir, 'pnpm-lock.yaml'))) return 'pnpm'
@@ -29,6 +31,31 @@ export interface ScannedProject {
   isMonorepo: boolean
   packageManager: PackageManager
   workspaces: WorkspacePkg[]
+  envFiles: EnvFile[]
+}
+
+function scanEnvFiles(root: string, dirs: string[]): EnvFile[] {
+  const out: EnvFile[] = []
+  const seen = new Set<string>()
+  for (const dir of dirs) {
+    let entries: Dirent[]
+    try {
+      entries = readdirSync(dir, { withFileTypes: true })
+    } catch {
+      continue
+    }
+    for (const e of entries) {
+      if (!e.isFile() || !ENV_FILE.test(e.name)) continue
+      const full = join(dir, e.name)
+      if (seen.has(full)) continue
+      seen.add(full)
+      out.push({ name: e.name, relPath: toRel(root, dir), path: full })
+    }
+  }
+  out.sort((a, b) =>
+    a.relPath === b.relPath ? a.name.localeCompare(b.name) : a.relPath.localeCompare(b.relPath)
+  )
+  return out
 }
 
 function readJson(file: string): any {
@@ -106,5 +133,10 @@ export function scanProject(root: string): ScannedProject {
     workspaces.push(rootWs)
   }
 
-  return { isMonorepo, packageManager, workspaces }
+  // .env 文件：扫描项目根目录 + 每个 workspace 目录
+  const envDirs = new Set<string>([root])
+  for (const ws of workspaces) envDirs.add(ws.relPath === '.' ? root : join(root, ws.relPath))
+  const envFiles = scanEnvFiles(root, [...envDirs])
+
+  return { isMonorepo, packageManager, workspaces, envFiles }
 }

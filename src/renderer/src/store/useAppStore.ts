@@ -8,6 +8,7 @@ interface AppState {
   selectedProjectId?: string
   selectedScriptId?: string // sessionKey of focused terminal tab
   openTabs: string[] // sessionKeys
+  activeEnvPath?: string // absolute path of the .env file open in the editor (right panel)
   theme: ThemeMode
 
   init(): Promise<void>
@@ -22,6 +23,7 @@ interface AppState {
   restartScript(projectId: string, scriptId: string): Promise<void>
   openTab(key: string): void
   closeTab(key: string): void
+  openEnvFile(path: string): void
   setTheme(theme: ThemeMode): Promise<void>
   applyThemeClass(): void
 
@@ -84,7 +86,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   selectProject(id) {
-    set({ selectedProjectId: id })
+    const tabs = get().openTabs.filter((k) => k.startsWith(id + '::'))
+    set({ selectedProjectId: id, selectedScriptId: tabs[tabs.length - 1], activeEnvPath: undefined })
     window.devdock.ui.setState({ selectedProjectId: id })
   },
 
@@ -100,10 +103,13 @@ export const useAppStore = create<AppState>((set, get) => ({
     await window.devdock.projects.remove(id)
     set((st) => {
       const projects = st.projects.filter((p) => p.id !== id)
-      return {
-        projects,
-        selectedProjectId: st.selectedProjectId === id ? projects[0]?.id : st.selectedProjectId
-      }
+      const openTabs = st.openTabs.filter((k) => !k.startsWith(id + '::'))
+      const selectedProjectId =
+        st.selectedProjectId === id ? projects[0]?.id : st.selectedProjectId
+      const projectTabs = selectedProjectId
+        ? openTabs.filter((k) => k.startsWith(selectedProjectId + '::'))
+        : []
+      return { projects, openTabs, selectedProjectId, selectedScriptId: projectTabs.at(-1) }
     })
   },
 
@@ -141,8 +147,13 @@ export const useAppStore = create<AppState>((set, get) => ({
   openTab(key) {
     set((st) => ({
       openTabs: st.openTabs.includes(key) ? st.openTabs : [...st.openTabs, key],
-      selectedScriptId: key
+      selectedScriptId: key,
+      activeEnvPath: undefined
     }))
+  },
+
+  openEnvFile(path) {
+    set({ activeEnvPath: path })
   },
 
   closeTab(key) {
