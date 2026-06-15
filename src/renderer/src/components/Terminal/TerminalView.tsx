@@ -9,9 +9,9 @@ import '@xterm/xterm/css/xterm.css'
 const DARK_THEME = {
   background: '#00000000',
   foreground: '#d4d6dc',
-  cursor: '#9aa0aa',
-  cursorAccent: '#1c1d22',
-  selectionBackground: '#3a4150',
+  cursor: '#4ade80',
+  cursorAccent: '#0c0f18',
+  selectionBackground: '#23433a',
   black: '#3b3f47',
   red: '#f87171',
   green: '#34d399',
@@ -33,9 +33,9 @@ const DARK_THEME = {
 const LIGHT_THEME = {
   background: '#00000000',
   foreground: '#3a3f47',
-  cursor: '#6b7280',
+  cursor: '#16a34a',
   cursorAccent: '#ffffff',
-  selectionBackground: '#cdd8ef',
+  selectionBackground: '#bbf7d0',
   black: '#3b3f47',
   red: '#dc2626',
   green: '#059669',
@@ -74,7 +74,7 @@ export function TerminalView({
     let disposed = false
 
     const term = new Terminal({
-      fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
+      fontFamily: '"JetBrains Mono Variable", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
       fontSize: 12,
       lineHeight: 1.35,
       cursorBlink: true,

@@ -103,7 +103,7 @@ export function ProjectRow({ project }: { project: Project }): JSX.Element {
         {/* running badge — hidden on hover to reveal actions */}
         {runningCount > 0 && (
           <span className="flex items-center gap-1 rounded-full bg-run/15 px-1.5 py-0.5 text-[10px] font-medium text-run group-hover:hidden">
-            <span className="h-1.5 w-1.5 rounded-full bg-run" />
+            <span className="glow-run h-1.5 w-1.5 rounded-full bg-run" />
             {runningCount}
           </span>
         )}

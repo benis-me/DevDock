@@ -2,17 +2,31 @@ import type { JSX } from 'react'
 import { useAppStore } from '@/store/useAppStore'
 import { ScriptList } from '@/components/ScriptList/ScriptList'
 import { TerminalDock } from '@/components/Terminal/TerminalDock'
-import { RefreshCw, FolderOpen, FolderGit2 } from 'lucide-react'
+import { RefreshCw, FolderOpen, SquareTerminal, Plus } from 'lucide-react'
 
 export function ProjectView(): JSX.Element {
   const project = useAppStore((s) => s.projects.find((p) => p.id === s.selectedProjectId))
   const rescan = useAppStore((s) => s.rescanProject)
+  const addProject = useAppStore((s) => s.addProject)
 
   if (!project) {
     return (
-      <div className="drag flex flex-1 flex-col items-center justify-center gap-3 text-muted-foreground">
-        <FolderGit2 className="h-8 w-8 opacity-40" strokeWidth={1.5} />
-        <p className="text-sm">从左侧选择，或添加一个项目</p>
+      <div className="drag flex flex-1 flex-col items-center justify-center gap-5 px-6">
+        <div className="glow-run flex h-16 w-16 items-center justify-center rounded-2xl bg-brand/10 text-brand">
+          <SquareTerminal className="h-8 w-8" strokeWidth={1.5} />
+        </div>
+        <div className="text-center">
+          <h1 className="text-base font-semibold tracking-tight text-foreground">DevDock</h1>
+          <p className="mt-1.5 max-w-xs text-sm leading-relaxed text-muted-foreground">
+            管理本地项目的开发脚本——一键启动、查看终端、追踪运行状态。
+          </p>
+        </div>
+        <button
+          onClick={addProject}
+          className="no-drag inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-[13px] font-medium text-primary-foreground transition-all hover:opacity-90 active:scale-[0.98]"
+        >
+          <Plus className="h-4 w-4" /> 添加项目
+        </button>
       </div>
     )
   }
@@ -22,7 +36,9 @@ export function ProjectView(): JSX.Element {
       <header className="drag flex h-11 items-center gap-2 border-b border-border px-4">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="truncate text-[13px] font-medium text-foreground">{project.name}</span>
+            <span className="truncate text-[13px] font-semibold tracking-tight text-foreground">
+              {project.name}
+            </span>
             {project.isMonorepo && (
               <span className="shrink-0 rounded bg-muted px-1.5 py-px text-[10px] font-medium text-muted-foreground">
                 monorepo

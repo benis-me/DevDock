@@ -45,7 +45,13 @@ export function TerminalDock(): JSX.Element {
                     : 'text-muted-foreground hover:bg-accent/40 hover:text-foreground'
                 )}
               >
-                <span className={cn('h-1.5 w-1.5 rounded-full', TAB_DOT[st ?? ''] ?? 'bg-idle')} />
+                <span
+                  className={cn(
+                    'h-1.5 w-1.5 rounded-full',
+                    TAB_DOT[st ?? ''] ?? 'bg-idle',
+                    st === 'running' && 'glow-run'
+                  )}
+                />
                 <span className="font-mono">{tabLabel(key)}</span>
                 <button
                   title="关闭"

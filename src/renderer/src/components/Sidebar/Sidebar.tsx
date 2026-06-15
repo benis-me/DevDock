@@ -10,12 +10,14 @@ export function Sidebar(): JSX.Element {
   const addProject = useAppStore((s) => s.addProject)
 
   return (
-    <aside className="flex w-64 shrink-0 flex-col border-r border-border bg-card/30">
+    <aside className="sheen flex w-64 shrink-0 flex-col border-r border-border bg-card/40">
       {/* brand / drag title bar — pl clears macOS traffic lights */}
       <div className="drag flex h-11 items-center pl-20 pr-3">
         <div className="flex items-center gap-2">
-          <SquareTerminal className="h-[18px] w-[18px] text-brand" strokeWidth={2.25} />
-          <span className="text-[13px] font-medium tracking-tight text-foreground/75">DevDock</span>
+          <span className="flex h-6 w-6 items-center justify-center rounded-md bg-brand/12 text-brand">
+            <SquareTerminal className="h-[15px] w-[15px]" strokeWidth={2.25} />
+          </span>
+          <span className="text-[13px] font-semibold tracking-tight text-foreground">DevDock</span>
         </div>
       </div>
 
@@ -40,7 +42,7 @@ export function Sidebar(): JSX.Element {
           {projects.length === 0 ? (
             <button
               onClick={addProject}
-              className="no-drag mt-2 flex flex-col items-center gap-2 rounded-lg border border-dashed border-border px-3 py-7 text-center text-muted-foreground transition-colors hover:border-brand/50 hover:text-foreground"
+              className="no-drag mt-2 flex flex-col items-center gap-2 rounded-xl border border-dashed border-border px-3 py-7 text-center text-muted-foreground transition-colors hover:border-brand/50 hover:text-foreground"
             >
               <FolderPlus className="h-5 w-5" strokeWidth={1.75} />
               <span className="text-xs">添加项目文件夹</span>

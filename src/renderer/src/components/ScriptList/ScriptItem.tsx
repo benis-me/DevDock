@@ -63,8 +63,10 @@ export function ScriptItem({ projectId, def }: { projectId: string; def: ScriptD
       className={cn(
         'group relative cursor-pointer rounded-lg border px-3 py-2 transition-colors',
         selected
-          ? 'border-brand/40 bg-accent ring-1 ring-brand/30'
-          : 'border-border bg-card/40 hover:bg-accent/40'
+          ? 'border-brand/50 bg-accent ring-1 ring-brand/30'
+          : status === 'running'
+            ? 'border-run/30 bg-card/40 hover:bg-accent/40'
+            : 'border-border bg-card/40 hover:bg-accent/40'
       )}
     >
       {selected && <span className="absolute inset-y-2 left-0 w-0.5 rounded-full bg-brand" />}
@@ -74,7 +76,8 @@ export function ScriptItem({ projectId, def }: { projectId: string; def: ScriptD
           className={cn(
             'h-2 w-2 shrink-0 rounded-full',
             DOT[status],
-            status === 'starting' && 'animate-pulse'
+            status === 'starting' && 'animate-pulse',
+            status === 'running' && 'glow-run'
           )}
         />
         <div className="min-w-0 flex-1">
