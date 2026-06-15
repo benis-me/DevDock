@@ -52,6 +52,9 @@ export function ScriptItem({ projectId, def }: { projectId: string; def: ScriptD
   const startScript = useAppStore((s) => s.startScript)
   const stopScript = useAppStore((s) => s.stopScript)
   const restartScript = useAppStore((s) => s.restartScript)
+  const portless = useAppStore((s) => s.scriptPrefs[key]?.portless === true)
+  const portlessAvailable = useAppStore((s) => s.portlessAvailable)
+  const setPortless = useAppStore((s) => s.setPortless)
 
   const status: SessionStatus | 'idle' = session?.status ?? 'idle'
   const isActive = status === 'running' || status === 'starting'
@@ -96,7 +99,25 @@ export function ScriptItem({ projectId, def }: { projectId: string; def: ScriptD
           </div>
         </div>
 
-        <div className="flex shrink-0 items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
+        <div className="flex shrink-0 items-center gap-1" onClick={(e) => e.stopPropagation()}>
+          {def.kind === 'long-running' && portlessAvailable && (
+            <button
+              title={
+                portless
+                  ? '已启用 portless：用 https://*.localhost 启动'
+                  : '用 portless 启动（干净的 *.localhost 域名，需重启脚本生效）'
+              }
+              onClick={() => setPortless(projectId, def.id, !portless)}
+              className={cn(
+                'mr-0.5 rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors',
+                portless
+                  ? 'bg-foreground text-background'
+                  : 'border border-border text-muted-foreground hover:text-foreground'
+              )}
+            >
+              portless
+            </button>
+          )}
           {isActive ? (
             <>
               <IconBtn title="重启" onClick={() => restartScript(projectId, def.id)}>

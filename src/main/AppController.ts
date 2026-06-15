@@ -2,9 +2,17 @@ import { EventEmitter } from 'events'
 import { existsSync, readFileSync, writeFileSync } from 'fs'
 import { basename, join } from 'path'
 import { randomUUID } from 'crypto'
+import { execSync } from 'child_process'
 import { parse as parseDotenv } from 'dotenv'
-import type { Config, Project, ScriptDef, SessionState } from '@shared/types'
+import type { Config, Project, ScriptDef, ScriptPrefs, SessionState } from '@shared/types'
 import { sessionKey, runCommand } from '@shared/util'
+
+function slugify(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
 import { ProjectStore } from './services/ProjectStore'
 import { ProcessManager } from './services/ProcessManager'
 import { scanProject } from './services/Scanner'
@@ -14,6 +22,7 @@ import type { IFileWatcher } from './services/FileWatcher'
 export class AppController extends EventEmitter {
   private store: ProjectStore
   private config: Config
+  private portlessOk = false
   readonly pm = new ProcessManager()
 
   constructor(
@@ -23,6 +32,7 @@ export class AppController extends EventEmitter {
     super()
     this.store = new ProjectStore(configPath)
     this.config = this.store.load()
+    if (!this.config.scriptPrefs) this.config.scriptPrefs = {}
     // 转发进程事件
     this.pm.on('data', (key, chunk) => this.emit('terminal:data', key, chunk))
     this.pm.on('status', (s: SessionState) => this.emit('session:status', s))
@@ -146,12 +156,62 @@ export class AppController extends EventEmitter {
     const found = this.findScript(projectId, scriptId)
     if (!found) return
     const { project, def } = found
+    const base = runCommand(project.packageManager, def.name)
+    // 未安装 portless 时降级为普通启动
+    const usePortless =
+      this.portlessOk && this.config.scriptPrefs[sessionKey(projectId, scriptId)]?.portless === true
+
+    let command = base
+    let url: string | undefined
+    if (usePortless) {
+      const name = this.portlessName(project, def)
+      command = `portless ${name} ${base}`
+      url = `https://${name}.localhost`
+    }
+
     this.pm.start({
       scriptId: sessionKey(projectId, scriptId),
-      command: runCommand(project.packageManager, def.name),
+      command,
       cwd: def.cwd,
-      env: this.loadRunEnv(project.path, def.cwd)
+      env: this.loadRunEnv(project.path, def.cwd),
+      url
     })
+  }
+
+  // portless 域名：dev → <项目>；其它服务 → <脚本>.<项目>
+  private portlessName(project: Project, def: ScriptDef): string {
+    const base = slugify(project.name) || slugify(basename(project.path)) || 'app'
+    if (def.name === 'dev') return base
+    return `${slugify(def.name) || 'svc'}.${base}`
+  }
+
+  // ---- script prefs (portless 等) ----
+  getScriptPrefs(): Record<string, ScriptPrefs> {
+    return this.config.scriptPrefs
+  }
+
+  setScriptPortless(projectId: string, scriptId: string, enabled: boolean): void {
+    const key = sessionKey(projectId, scriptId)
+    this.config.scriptPrefs[key] = { ...this.config.scriptPrefs[key], portless: enabled }
+    this.persist()
+  }
+
+  // 启动时检测一次 portless 是否可用，结果缓存
+  refreshPortlessAvailability(): boolean {
+    try {
+      execSync('command -v portless', {
+        stdio: 'ignore',
+        shell: process.env.SHELL || '/bin/bash'
+      })
+      this.portlessOk = true
+    } catch {
+      this.portlessOk = false
+    }
+    return this.portlessOk
+  }
+
+  isPortlessAvailable(): boolean {
+    return this.portlessOk
   }
 
   // 把项目的 .env / .env.local 注入到脚本运行环境（先根目录后脚本目录，后者优先）

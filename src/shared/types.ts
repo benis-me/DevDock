@@ -41,10 +41,15 @@ export interface UiState {
   lastSelectedScriptId?: string
 }
 
+export interface ScriptPrefs {
+  portless?: boolean
+}
+
 export interface Config {
   version: number
   projects: Project[]
   ui: UiState
+  scriptPrefs: Record<string, ScriptPrefs> // key: `${projectId}::${scriptId}`
 }
 
 export interface SessionState {
@@ -61,5 +66,6 @@ export const CONFIG_VERSION = 1
 export const DEFAULT_CONFIG: Config = {
   version: CONFIG_VERSION,
   projects: [],
-  ui: { theme: 'system' }
+  ui: { theme: 'system' },
+  scriptPrefs: {}
 }

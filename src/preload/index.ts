@@ -20,7 +20,10 @@ const api: DevDockApi = {
   scripts: {
     start: (pid, sid) => ipcRenderer.invoke(IPC.ScriptsStart, pid, sid),
     stop: (key) => ipcRenderer.invoke(IPC.ScriptsStop, key),
-    restart: (pid, sid) => ipcRenderer.invoke(IPC.ScriptsRestart, pid, sid)
+    restart: (pid, sid) => ipcRenderer.invoke(IPC.ScriptsRestart, pid, sid),
+    prefs: () => ipcRenderer.invoke(IPC.ScriptsPrefs),
+    setPortless: (pid, sid, enabled) => ipcRenderer.invoke(IPC.ScriptsSetPortless, pid, sid, enabled),
+    portlessAvailable: () => ipcRenderer.invoke(IPC.PortlessAvailable)
   },
   terminal: {
     write: (key, data) => ipcRenderer.invoke(IPC.TerminalWrite, key, data),

@@ -29,6 +29,7 @@ export interface StartOptions {
   command: string
   cwd: string
   env?: NodeJS.ProcessEnv
+  url?: string // 预设网址（如 portless 的 *.localhost），设置后跳过输出解析
 }
 
 export class ProcessManager extends EventEmitter {
@@ -85,6 +86,10 @@ export class ProcessManager extends EventEmitter {
       if (session.state.status === 'starting') {
         session.state.status = 'running'
         this.emit('status', { ...session.state })
+        if (opts.url && !session.state.url) {
+          session.state.url = opts.url
+          this.emit('url', opts.scriptId, opts.url)
+        }
       }
       if (!session.state.url) {
         const url = detectUrl(data)

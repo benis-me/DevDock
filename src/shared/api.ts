@@ -1,4 +1,4 @@
-import type { Project, SessionState, UiState } from './types'
+import type { Project, ScriptPrefs, SessionState, UiState } from './types'
 
 export interface DevDockApi {
   projects: {
@@ -13,6 +13,9 @@ export interface DevDockApi {
     start(projectId: string, scriptId: string): Promise<void>
     stop(sessionKey: string): Promise<void>
     restart(projectId: string, scriptId: string): Promise<void>
+    prefs(): Promise<Record<string, ScriptPrefs>>
+    setPortless(projectId: string, scriptId: string, enabled: boolean): Promise<void>
+    portlessAvailable(): Promise<boolean>
   }
   terminal: {
     write(sessionKey: string, data: string): Promise<void>

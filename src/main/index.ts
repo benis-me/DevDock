@@ -35,6 +35,7 @@ app.whenReady().then(() => {
   const configPath = join(app.getPath('userData'), 'devdock', 'config.json')
   const watcher = new FileWatcher((id, p) => controller.handleWatchChange(id, p))
   controller = new AppController(configPath, watcher)
+  controller.refreshPortlessAvailability()
   nativeTheme.themeSource = controller.getUiState().theme
   controller.startWatchingAll()
   registerIpc(controller, () => mainWindow)

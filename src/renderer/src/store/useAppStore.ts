@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { Project, SessionState, ThemeMode } from '@shared/types'
+import type { Project, ScriptPrefs, SessionState, ThemeMode } from '@shared/types'
 import { sessionKey } from '@shared/util'
 
 interface AppState {
@@ -9,6 +9,8 @@ interface AppState {
   selectedScriptId?: string // sessionKey of focused terminal tab
   openTabs: string[] // sessionKeys
   activeEnvPath?: string // absolute path of the .env file open in the editor (right panel)
+  scriptPrefs: Record<string, ScriptPrefs> // key: sessionKey
+  portlessAvailable: boolean
   theme: ThemeMode
 
   init(): Promise<void>
@@ -24,6 +26,7 @@ interface AppState {
   openTab(key: string): void
   closeTab(key: string): void
   openEnvFile(path: string): void
+  setPortless(projectId: string, scriptId: string, enabled: boolean): Promise<void>
   setTheme(theme: ThemeMode): Promise<void>
   applyThemeClass(): void
 
@@ -36,19 +39,25 @@ export const useAppStore = create<AppState>((set, get) => ({
   projects: [],
   sessions: {},
   openTabs: [],
+  scriptPrefs: {},
+  portlessAvailable: false,
   theme: 'system',
 
   async init() {
-    const [projects, ui, sessions] = await Promise.all([
+    const [projects, ui, sessions, scriptPrefs, portlessAvailable] = await Promise.all([
       window.devdock.projects.list(),
       window.devdock.ui.getState(),
-      window.devdock.sessions.list()
+      window.devdock.sessions.list(),
+      window.devdock.scripts.prefs(),
+      window.devdock.scripts.portlessAvailable()
     ])
     const sessMap: Record<string, SessionState> = {}
     for (const s of sessions) sessMap[s.scriptId] = s
     set({
       projects,
       sessions: sessMap,
+      scriptPrefs,
+      portlessAvailable,
       theme: ui.theme,
       selectedProjectId: ui.selectedProjectId ?? projects[0]?.id
     })
@@ -154,6 +163,14 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   openEnvFile(path) {
     set({ activeEnvPath: path })
+  },
+
+  async setPortless(projectId, scriptId, enabled) {
+    const key = sessionKey(projectId, scriptId)
+    set((st) => ({
+      scriptPrefs: { ...st.scriptPrefs, [key]: { ...st.scriptPrefs[key], portless: enabled } }
+    }))
+    await window.devdock.scripts.setPortless(projectId, scriptId, enabled)
   },
 
   closeTab(key) {
