@@ -52,14 +52,22 @@ describe('ProcessManager', () => {
     expect(pm.getBuffer('.#dev')).toBe('hello world')
   })
 
-  it('marks exited with exit code on process exit', () => {
+  it('marks errored on a non-zero crash exit (no stop requested)', () => {
     const fake = makeFakePty()
     const pm = new ProcessManager(() => fake.pty)
     pm.start({ scriptId: '.#build', command: 'x', cwd: '/x' })
     fake.emitExit(1)
     const st = pm.getState('.#build')
-    expect(st?.status).toBe('exited')
+    expect(st?.status).toBe('errored')
     expect(st?.exitCode).toBe(1)
+  })
+
+  it('marks exited on a clean (zero) exit', () => {
+    const fake = makeFakePty()
+    const pm = new ProcessManager(() => fake.pty)
+    pm.start({ scriptId: '.#build', command: 'x', cwd: '/x' })
+    fake.emitExit(0)
+    expect(pm.getState('.#build')?.status).toBe('exited')
   })
 
   it('stop kills the pty', () => {

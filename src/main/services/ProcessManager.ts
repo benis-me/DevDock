@@ -9,6 +9,7 @@ interface Session {
   buffer: string
   command: string
   cwd: string
+  stopRequested: boolean
 }
 
 const BUFFER_LIMIT = 200_000
@@ -41,7 +42,7 @@ export class ProcessManager extends EventEmitter {
       status: 'starting',
       startedAt: Date.now()
     }
-    const session: Session = { state, pty, buffer: '', command: opts.command, cwd: opts.cwd }
+    const session: Session = { state, pty, buffer: '', command: opts.command, cwd: opts.cwd, stopRequested: false }
     this.sessions.set(opts.scriptId, session)
     this.emit('status', { ...state })
 
@@ -62,7 +63,7 @@ export class ProcessManager extends EventEmitter {
     })
 
     pty.onExit(({ exitCode }) => {
-      session.state.status = exitCode === 0 ? 'exited' : exitCode > 0 ? 'exited' : 'errored'
+      session.state.status = session.stopRequested || exitCode === 0 ? 'exited' : 'errored'
       session.state.exitCode = exitCode
       session.state.url = undefined
       this.emit('status', { ...session.state })
@@ -73,6 +74,7 @@ export class ProcessManager extends EventEmitter {
     const s = this.sessions.get(scriptId)
     if (!s) return
     if (s.state.status === 'starting' || s.state.status === 'running') {
+      s.stopRequested = true
       try {
         s.pty.kill()
       } catch {

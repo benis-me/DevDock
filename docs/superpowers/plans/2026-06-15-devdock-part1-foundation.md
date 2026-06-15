@@ -21,18 +21,31 @@
 
 - [ ] **Step 1: 初始化 package.json 并安装依赖**
 
+本项目用 **bun** 作为包管理器。手写 `package.json`（不要设置 `"type": "module"`——main/preload 编译为 CJS，依赖 `__dirname`/`require`）：
+
+```json
+{
+  "name": "devdock",
+  "version": "0.1.0",
+  "main": "./out/main/index.js",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "start": "electron-vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "trustedDependencies": ["electron", "esbuild", "node-pty"]
+}
+```
+
+> **bun 关键点**：bun 默认不执行依赖的 postinstall 脚本，必须把需要构建/下载二进制的包列入 `trustedDependencies`，否则 Electron 二进制不会下载、node-pty 不会编译。`electron`、`esbuild` 现在就加上；`node-pty` 在 Part 2 安装，提前列入无妨。
+
+然后安装依赖：
 ```bash
-npm init -y
-# 注意：不设置 "type": "module"——main/preload 编译为 CJS，依赖 __dirname/require
-npm pkg set name=devdock version=0.1.0 main=./out/main/index.js
-npm pkg set scripts.dev="electron-vite dev"
-npm pkg set scripts.build="electron-vite build"
-npm pkg set scripts.start="electron-vite preview"
-npm pkg set scripts.test="vitest run"
-npm pkg set scripts.test:watch="vitest"
-npm i react react-dom
-npm i -D electron electron-vite vite @vitejs/plugin-react typescript @types/react @types/react-dom @types/node
-npm i -D vitest @testing-library/react @testing-library/jest-dom @testing-library/user-event jsdom
+bun add react react-dom
+bun add -D electron electron-vite vite @vitejs/plugin-react typescript @types/react @types/react-dom @types/node
+bun add -D vitest @testing-library/react @testing-library/jest-dom @testing-library/user-event jsdom
 ```
 
 - [ ] **Step 2: 写配置文件**
@@ -221,7 +234,7 @@ export default function App(): JSX.Element {
 
 - [ ] **Step 4: 验证空窗口启动**
 
-Run: `npm run dev`
+Run: `bun run dev`
 Expected: 弹出一个标题为 DevDock 的窗口，左上角显示 "DevDock" 文本。手动关闭窗口。
 
 - [ ] **Step 5: Commit**
@@ -242,8 +255,8 @@ git commit -m "chore: scaffold electron-vite + react + ts"
 - [ ] **Step 1: 安装 Tailwind 4 与工具依赖**
 
 ```bash
-npm i -D tailwindcss @tailwindcss/vite
-npm i class-variance-authority clsx tailwind-merge lucide-react
+bun add -D tailwindcss @tailwindcss/vite
+bun add class-variance-authority clsx tailwind-merge lucide-react
 ```
 
 - [ ] **Step 2: 接入 Tailwind vite 插件**
@@ -359,7 +372,7 @@ export function cn(...inputs: ClassValue[]): string {
 }
 ```
 
-`components.json`（供 `npx shadcn add` 使用）:
+`components.json`（供 `bunx shadcn add` 使用）:
 ```json
 {
   "$schema": "https://ui.shadcn.com/schema.json",
@@ -390,12 +403,12 @@ import './styles/globals.css'
 - [ ] **Step 5: 添加基础 shadcn 组件并验证**
 
 ```bash
-npx shadcn@latest add button input dialog dropdown-menu tooltip scroll-area separator badge sonner
+bunx shadcn@latest add button input dialog dropdown-menu tooltip scroll-area separator badge sonner
 ```
-Run: `npm run dev`
+Run: `bun run dev`
 Expected: 窗口正常启动无样式报错；`src/renderer/src/components/ui/` 下生成 button.tsx 等文件。手动关闭窗口。
 
-> 若 shadcn CLI 因自定义目录报错，改为手动从 https://ui.shadcn.com 复制对应组件源码到 `src/renderer/src/components/ui/` 并 `npm i @radix-ui/react-dialog @radix-ui/react-dropdown-menu @radix-ui/react-tooltip @radix-ui/react-scroll-area @radix-ui/react-separator sonner`。
+> 若 shadcn CLI 因自定义目录报错，改为手动从 https://ui.shadcn.com 复制对应组件源码到 `src/renderer/src/components/ui/` 并 `bun add @radix-ui/react-dialog @radix-ui/react-dropdown-menu @radix-ui/react-tooltip @radix-ui/react-scroll-area @radix-ui/react-separator sonner`。
 
 - [ ] **Step 6: Commit**
 
@@ -567,7 +580,7 @@ describe('detectUrl', () => {
 
 - [ ] **Step 2: 运行测试确认失败**
 
-Run: `npx vitest run src/main/services/UrlDetector.test.ts`
+Run: `bunx vitest run src/main/services/UrlDetector.test.ts`
 Expected: FAIL（找不到模块 `./UrlDetector`）。
 
 - [ ] **Step 3: 实现 UrlDetector**
@@ -601,7 +614,7 @@ export function detectUrl(input: string): string | null {
 
 - [ ] **Step 4: 运行测试确认通过**
 
-Run: `npx vitest run src/main/services/UrlDetector.test.ts`
+Run: `bunx vitest run src/main/services/UrlDetector.test.ts`
 Expected: PASS（6 个用例全过）。
 
 - [ ] **Step 5: Commit**
@@ -652,6 +665,10 @@ describe('detectPackageManager', () => {
     touch('bun.lockb')
     expect(detectPackageManager(dir)).toBe('bun')
   })
+  it('detects bun from bun.lock (bun 1.2+ text lockfile)', () => {
+    touch('bun.lock')
+    expect(detectPackageManager(dir)).toBe('bun')
+  })
   it('detects npm from package-lock.json', () => {
     touch('package-lock.json')
     expect(detectPackageManager(dir)).toBe('npm')
@@ -664,7 +681,7 @@ describe('detectPackageManager', () => {
 
 - [ ] **Step 2: 运行测试确认失败**
 
-Run: `npx vitest run src/main/services/Scanner.pm.test.ts`
+Run: `bunx vitest run src/main/services/Scanner.pm.test.ts`
 Expected: FAIL（`detectPackageManager` 未定义）。
 
 - [ ] **Step 3: 实现 detectPackageManager**
@@ -678,7 +695,8 @@ import type { PackageManager } from '@shared/types'
 export function detectPackageManager(dir: string): PackageManager {
   if (existsSync(join(dir, 'pnpm-lock.yaml'))) return 'pnpm'
   if (existsSync(join(dir, 'yarn.lock'))) return 'yarn'
-  if (existsSync(join(dir, 'bun.lockb'))) return 'bun'
+  // bun 1.2+ 用文本 bun.lock；旧版用二进制 bun.lockb，两者都要识别
+  if (existsSync(join(dir, 'bun.lockb')) || existsSync(join(dir, 'bun.lock'))) return 'bun'
   if (existsSync(join(dir, 'package-lock.json'))) return 'npm'
   return 'npm'
 }
@@ -686,7 +704,7 @@ export function detectPackageManager(dir: string): PackageManager {
 
 - [ ] **Step 4: 运行测试确认通过**
 
-Run: `npx vitest run src/main/services/Scanner.pm.test.ts`
+Run: `bunx vitest run src/main/services/Scanner.pm.test.ts`
 Expected: PASS。
 
 - [ ] **Step 5: Commit**
@@ -730,12 +748,15 @@ describe('classifyScript', () => {
     expect(classifyScript('lint', 'eslint .')).toBe('one-shot')
     expect(classifyScript('test', 'vitest run')).toBe('one-shot')
   })
+  it('classifies vite build with intervening flags as one-shot', () => {
+    expect(classifyScript('build', 'vite --config vite.prod.ts build')).toBe('one-shot')
+  })
 })
 ```
 
 - [ ] **Step 2: 运行测试确认失败**
 
-Run: `npx vitest run src/main/services/Scanner.classify.test.ts`
+Run: `bunx vitest run src/main/services/Scanner.classify.test.ts`
 Expected: FAIL（`classifyScript` 未定义）。
 
 - [ ] **Step 3: 实现 classifyScript（追加到 Scanner.ts）**
@@ -746,10 +767,12 @@ import type { ScriptKind } from '@shared/types'
 
 const LONG_RUNNING_NAME = /^(dev|start|serve|watch|preview)(:|$)/i
 const LONG_RUNNING_CMD =
-  /(vite(?!\s+build)|next\s+dev|nuxt\s+dev|webpack(\s+serve|-dev-server)|react-scripts\s+start|vue-cli-service\s+serve|astro\s+dev|remix\s+dev|nodemon|tsc\s+-w|--watch)/i
+  /(vite(?!st)\b|next\s+dev|nuxt\s+dev|webpack(\s+serve|-dev-server)|react-scripts\s+start|vue-cli-service\s+serve|astro\s+dev|remix\s+dev|nodemon|tsc\s+-w|--watch)/i
 
 export function classifyScript(name: string, command: string): ScriptKind {
   if (LONG_RUNNING_NAME.test(name)) return 'long-running'
+  // 命令含独立 build 且非 watch → 一次性（避免 "vite --config x build" 被误判为长期运行）
+  if (/\bbuild\b/.test(command) && !/(--watch|(^|\s)-w(\s|$))/.test(command)) return 'one-shot'
   if (LONG_RUNNING_CMD.test(command)) return 'long-running'
   return 'one-shot'
 }
@@ -757,7 +780,7 @@ export function classifyScript(name: string, command: string): ScriptKind {
 
 - [ ] **Step 4: 运行测试确认通过**
 
-Run: `npx vitest run src/main/services/Scanner.classify.test.ts`
+Run: `bunx vitest run src/main/services/Scanner.classify.test.ts`
 Expected: PASS。
 
 - [ ] **Step 5: Commit**
@@ -778,8 +801,8 @@ git commit -m "feat: add script classification to Scanner"
 - [ ] **Step 1: 安装 workspace 解析依赖**
 
 ```bash
-npm i fast-glob js-yaml
-npm i -D @types/js-yaml
+bun add fast-glob js-yaml
+bun add -D @types/js-yaml
 ```
 
 - [ ] **Step 2: 写失败测试**
@@ -834,12 +857,21 @@ describe('scanProject', () => {
     expect(r.isMonorepo).toBe(true)
     expect(r.workspaces.map((w) => w.relPath)).toContain('apps/site')
   })
+
+  it('includes monorepo root scripts when the root has scripts', () => {
+    writePkg('.', { name: 'root', private: true, workspaces: ['packages/*'], scripts: { 'build:all': 'turbo run build' } })
+    writePkg('packages/web', { name: 'web', scripts: { dev: 'vite' } })
+    const r = scanProject(dir)
+    expect(r.isMonorepo).toBe(true)
+    const root = r.workspaces.find((w) => w.relPath === '.')
+    expect(root?.scripts.map((s) => s.name)).toContain('build:all')
+  })
 })
 ```
 
 - [ ] **Step 3: 运行测试确认失败**
 
-Run: `npx vitest run src/main/services/Scanner.scan.test.ts`
+Run: `bunx vitest run src/main/services/Scanner.scan.test.ts`
 Expected: FAIL（`scanProject` 未定义）。
 
 - [ ] **Step 4: 实现 scanProject（追加到 Scanner.ts）**
@@ -915,6 +947,8 @@ export function scanProject(root: string): ScannedProject {
   const rootWs = buildWorkspace(root, join(root, 'package.json'))
 
   if (isMonorepo) {
+    // monorepo 根包自身的脚本（如 build:all/release）也要纳入
+    if (rootWs && rootWs.scripts.length > 0) workspaces.push(rootWs)
     const pkgGlobs = patterns.map((p) => `${p.replace(/\/$/, '')}/package.json`)
     const found = fg.sync(pkgGlobs, {
       cwd: root,
@@ -937,7 +971,7 @@ export function scanProject(root: string): ScannedProject {
 
 - [ ] **Step 5: 运行测试确认通过**
 
-Run: `npx vitest run src/main/services/Scanner.scan.test.ts`
+Run: `bunx vitest run src/main/services/Scanner.scan.test.ts`
 Expected: PASS（3 个用例）。
 
 - [ ] **Step 6: Commit**
@@ -999,7 +1033,7 @@ describe('diffScripts', () => {
 
 - [ ] **Step 2: 运行测试确认失败**
 
-Run: `npx vitest run src/main/services/scriptDiff.test.ts`
+Run: `bunx vitest run src/main/services/scriptDiff.test.ts`
 Expected: FAIL（模块未找到）。
 
 - [ ] **Step 3: 实现 scriptDiff**
@@ -1042,7 +1076,7 @@ export function diffScripts(before: WorkspacePkg[], after: WorkspacePkg[]): Scri
 
 - [ ] **Step 4: 运行测试确认通过**
 
-Run: `npx vitest run src/main/services/scriptDiff.test.ts`
+Run: `bunx vitest run src/main/services/scriptDiff.test.ts`
 Expected: PASS。
 
 - [ ] **Step 5: Commit**
@@ -1112,7 +1146,7 @@ describe('ProjectStore', () => {
 
 - [ ] **Step 2: 运行测试确认失败**
 
-Run: `npx vitest run src/main/services/ProjectStore.test.ts`
+Run: `bunx vitest run src/main/services/ProjectStore.test.ts`
 Expected: FAIL（模块未找到）。
 
 - [ ] **Step 3: 实现 ProjectStore**
@@ -1154,7 +1188,7 @@ export class ProjectStore {
 
 - [ ] **Step 4: 运行测试确认通过**
 
-Run: `npx vitest run src/main/services/ProjectStore.test.ts`
+Run: `bunx vitest run src/main/services/ProjectStore.test.ts`
 Expected: PASS（4 个用例）。
 
 - [ ] **Step 5: Commit**
@@ -1175,9 +1209,9 @@ git commit -m "feat: add ProjectStore with persistence, migration and corruption
 - [ ] **Step 1: 安装 node-pty 并对 Electron 重建**
 
 ```bash
-npm i node-pty
-npm i -D @electron/rebuild
-npx electron-rebuild -f -w node-pty
+bun add node-pty
+bun add -D @electron/rebuild
+bunx electron-rebuild -f -w node-pty
 ```
 > 说明：node-pty 是原生模块，需对 Electron ABI 重建。ProcessManager 通过注入 `PtySpawner` 解耦，使单测可用 FakePty，不依赖原生模块。
 
@@ -1239,14 +1273,22 @@ describe('ProcessManager', () => {
     expect(pm.getBuffer('.#dev')).toBe('hello world')
   })
 
-  it('marks exited with exit code on process exit', () => {
+  it('marks errored on a non-zero crash exit (no stop requested)', () => {
     const fake = makeFakePty()
     const pm = new ProcessManager(() => fake.pty)
     pm.start({ scriptId: '.#build', command: 'x', cwd: '/x' })
     fake.emitExit(1)
     const st = pm.getState('.#build')
-    expect(st?.status).toBe('exited')
+    expect(st?.status).toBe('errored')
     expect(st?.exitCode).toBe(1)
+  })
+
+  it('marks exited on a clean (zero) exit', () => {
+    const fake = makeFakePty()
+    const pm = new ProcessManager(() => fake.pty)
+    pm.start({ scriptId: '.#build', command: 'x', cwd: '/x' })
+    fake.emitExit(0)
+    expect(pm.getState('.#build')?.status).toBe('exited')
   })
 
   it('stop kills the pty', () => {
@@ -1262,7 +1304,7 @@ describe('ProcessManager', () => {
 
 - [ ] **Step 3: 运行测试确认失败**
 
-Run: `npx vitest run src/main/services/ProcessManager.test.ts`
+Run: `bunx vitest run src/main/services/ProcessManager.test.ts`
 Expected: FAIL（模块未找到）。
 
 - [ ] **Step 4: 实现 ptySpawner 接口与真实实现**
@@ -1329,6 +1371,7 @@ interface Session {
   buffer: string
   command: string
   cwd: string
+  stopRequested: boolean
 }
 
 const BUFFER_LIMIT = 200_000
@@ -1361,7 +1404,7 @@ export class ProcessManager extends EventEmitter {
       status: 'starting',
       startedAt: Date.now()
     }
-    const session: Session = { state, pty, buffer: '', command: opts.command, cwd: opts.cwd }
+    const session: Session = { state, pty, buffer: '', command: opts.command, cwd: opts.cwd, stopRequested: false }
     this.sessions.set(opts.scriptId, session)
     this.emit('status', { ...state })
 
@@ -1382,7 +1425,7 @@ export class ProcessManager extends EventEmitter {
     })
 
     pty.onExit(({ exitCode }) => {
-      session.state.status = exitCode === 0 ? 'exited' : exitCode > 0 ? 'exited' : 'errored'
+      session.state.status = session.stopRequested || exitCode === 0 ? 'exited' : 'errored'
       session.state.exitCode = exitCode
       session.state.url = undefined
       this.emit('status', { ...session.state })
@@ -1393,6 +1436,7 @@ export class ProcessManager extends EventEmitter {
     const s = this.sessions.get(scriptId)
     if (!s) return
     if (s.state.status === 'starting' || s.state.status === 'running') {
+      s.stopRequested = true
       try {
         s.pty.kill()
       } catch {
@@ -1438,12 +1482,12 @@ export class ProcessManager extends EventEmitter {
 
 - [ ] **Step 6: 运行测试确认通过**
 
-Run: `npx vitest run src/main/services/ProcessManager.test.ts`
+Run: `bunx vitest run src/main/services/ProcessManager.test.ts`
 Expected: PASS（5 个用例）。
 
 - [ ] **Step 7: 运行全部单测并 Commit**
 
-Run: `npm test`
+Run: `bun run test`
 Expected: 所有测试文件全绿。
 ```bash
 git add -A
@@ -1454,6 +1498,6 @@ git commit -m "feat: add ProcessManager with injected pty spawner and url detect
 
 ## Part 1 完成标准
 
-- `npm run dev` 弹出空白 DevDock 窗口。
-- `npm test` 全绿，覆盖 UrlDetector / Scanner（pm+classify+scan）/ scriptDiff / ProjectStore / ProcessManager。
+- `bun run dev` 弹出空白 DevDock 窗口。
+- `bun run test` 全绿，覆盖 UrlDetector / Scanner（pm+classify+scan）/ scriptDiff / ProjectStore / ProcessManager。
 - 主进程纯逻辑服务全部就绪，等待 Part 2 接入 IPC 与 UI。

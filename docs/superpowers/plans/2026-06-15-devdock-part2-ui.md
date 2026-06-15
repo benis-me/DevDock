@@ -174,9 +174,9 @@ export class FileWatcher implements IFileWatcher {
 - [ ] **Step 3: 安装 chokidar 并运行测试确认失败**
 
 ```bash
-npm i chokidar
+bun add chokidar
 ```
-Run: `npx vitest run src/main/AppController.test.ts`
+Run: `bunx vitest run src/main/AppController.test.ts`
 Expected: FAIL（`AppController` 未定义）。
 
 - [ ] **Step 4: 实现 AppController**
@@ -367,7 +367,7 @@ export class AppController extends EventEmitter {
 
 - [ ] **Step 5: 运行测试确认通过**
 
-Run: `npx vitest run src/main/AppController.test.ts`
+Run: `bunx vitest run src/main/AppController.test.ts`
 Expected: PASS（4 个用例）。
 
 - [ ] **Step 6: Commit**
@@ -604,9 +604,9 @@ app.on('before-quit', () => {
 
 - [ ] **Step 5: 验证应用仍能启动 + 全部单测通过**
 
-Run: `npm test`
+Run: `bun run test`
 Expected: 全绿。
-Run: `npm run dev`
+Run: `bun run dev`
 Expected: 空白窗口启动无报错（devtools console 无 `window.devdock` 相关错误）。关闭窗口。
 
 - [ ] **Step 6: Commit**
@@ -627,7 +627,7 @@ git commit -m "feat: wire IPC, preload bridge and AppController into main"
 - [ ] **Step 1: 安装 zustand**
 
 ```bash
-npm i zustand
+bun add zustand
 ```
 
 - [ ] **Step 2: 写失败测试（reducer 行为，mock window.devdock）**
@@ -674,7 +674,7 @@ describe('useAppStore reducers', () => {
 
 - [ ] **Step 3: 运行测试确认失败**
 
-Run: `npx vitest run src/renderer/src/store/useAppStore.test.ts`
+Run: `bunx vitest run src/renderer/src/store/useAppStore.test.ts`
 Expected: FAIL（模块未找到）。
 
 - [ ] **Step 4: 实现 store**
@@ -852,7 +852,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
 - [ ] **Step 5: 运行测试确认通过**
 
-Run: `npx vitest run src/renderer/src/store/useAppStore.test.ts`
+Run: `bunx vitest run src/renderer/src/store/useAppStore.test.ts`
 Expected: PASS（4 个用例）。
 
 - [ ] **Step 6: Commit**
@@ -1268,7 +1268,7 @@ describe('ScriptItem', () => {
 
 - [ ] **Step 3: 运行测试确认失败**
 
-Run: `npx vitest run src/renderer/src/components/ScriptList/ScriptItem.test.tsx`
+Run: `bunx vitest run src/renderer/src/components/ScriptList/ScriptItem.test.tsx`
 Expected: FAIL（模块未找到）。
 
 - [ ] **Step 4: 实现 ScriptItem**
@@ -1357,7 +1357,7 @@ export function ScriptItem({ projectId, def }: { projectId: string; def: ScriptD
 
 - [ ] **Step 5: 运行测试确认通过**
 
-Run: `npx vitest run src/renderer/src/components/ScriptList/ScriptItem.test.tsx`
+Run: `bunx vitest run src/renderer/src/components/ScriptList/ScriptItem.test.tsx`
 Expected: PASS（2 个用例）。
 
 - [ ] **Step 6: 实现 ScriptList（分组：workspace → 服务/任务）**
@@ -1443,7 +1443,7 @@ git commit -m "feat: add script list with grouping and script item states"
 - [ ] **Step 1: 安装 xterm**
 
 ```bash
-npm i @xterm/xterm @xterm/addon-fit @xterm/addon-web-links @xterm/addon-search
+bun add @xterm/xterm @xterm/addon-fit @xterm/addon-web-links @xterm/addon-search
 ```
 
 - [ ] **Step 2: 实现 TerminalView（单个会话的 xterm 实例）**
@@ -1587,7 +1587,7 @@ export function TerminalDock(): JSX.Element {
 
 - [ ] **Step 4: 验证完整界面启动**
 
-Run: `npm run dev`
+Run: `bun run dev`
 Expected: 应用启动，左栏可点 + 添加一个真实前端项目（含 package.json），右侧列出脚本，点击「启动」dev 脚本后右侧终端出现实时输出，运行状态点变绿，PID/运行时长显示，检测到 `http://localhost:xxxx` 后出现可点击链接。点击停止可终止。手动关闭窗口。
 
 - [ ] **Step 5: Commit**
@@ -1627,7 +1627,7 @@ Modify `src/renderer/src/store/useAppStore.ts`，在 `init()` 中已有事件订
 
 - [ ] **Step 2: 手动验证**
 
-Run: `npm run dev`
+Run: `bun run dev`
 启动某个 dev 脚本后，在编辑器里修改该项目 `package.json` 中此脚本的命令并保存。
 Expected: 脚本列表自动刷新（命令文本变化），并弹出「脚本定义已更新」toast，点「重启」可重启该会话。手动关闭窗口。
 
@@ -1678,7 +1678,7 @@ app.on('before-quit', (e) => {
 
 - [ ] **Step 2: 手动验证**
 
-Run: `npm run dev`
+Run: `bun run dev`
 启动一个 dev 脚本，然后关闭窗口/退出应用。
 Expected: 弹出确认框；选「退出并终止」后子进程被杀（用系统活动监视器/`lsof -i :端口` 确认端口释放）；选「取消」则应用保持运行。
 
@@ -1697,7 +1697,7 @@ git commit -m "feat: confirm before quit and kill child processes"
 
 - [ ] **Step 1: 跑全部测试**
 
-Run: `npm test`
+Run: `bun run test`
 Expected: 全绿（UrlDetector / Scanner / scriptDiff / ProjectStore / ProcessManager / AppController / useAppStore / ScriptItem）。
 
 - [ ] **Step 2: 端到端手动清单**
@@ -1715,7 +1715,7 @@ Expected: 全绿（UrlDetector / Scanner / scriptDiff / ProjectStore / ProcessMa
 
 - [ ] **Step 3: 构建产物冒烟**
 
-Run: `npm run build`
+Run: `bun run build`
 Expected: 构建成功，`out/` 生成 main/preload/renderer。
 
 - [ ] **Step 4: Commit**
@@ -1730,4 +1730,4 @@ git commit -m "chore: devdock v1 complete"
 ## Part 2 完成标准
 
 - DevDock 完整可用：增删改查项目、扫描并分类脚本、启停重启、终端实时输出、URL 探测、文件变更自动重扫与重启提示、主题切换、安全退出。
-- `npm test` 全绿，`npm run build` 通过。
+- `bun run test` 全绿，`bun run build` 通过。
