@@ -1,0 +1,27 @@
+export const IPC = {
+  // invoke 命令
+  ProjectsList: 'projects:list',
+  ProjectsAdd: 'projects:add',
+  ProjectsRemove: 'projects:remove',
+  ProjectsRename: 'projects:rename',
+  ProjectsRescan: 'projects:rescan',
+  ProjectsRelocate: 'projects:relocate',
+  ScriptsStart: 'scripts:start',
+  ScriptsStop: 'scripts:stop',
+  ScriptsRestart: 'scripts:restart',
+  TerminalWrite: 'terminal:write',
+  TerminalResize: 'terminal:resize',
+  TerminalGetBuffer: 'terminal:getBuffer',
+  ShellOpenExternal: 'shell:openExternal',
+  ShellRevealInFinder: 'shell:revealInFinder',
+  DialogPickDirectory: 'dialog:pickDirectory',
+  UiGetState: 'ui:getState',
+  UiSetState: 'ui:setState',
+  SessionsList: 'sessions:list',
+  // 事件（main → renderer）
+  EvtTerminalData: 'evt:terminal:data',
+  EvtSessionStatus: 'evt:session:status',
+  EvtSessionUrl: 'evt:session:url',
+  EvtProjectUpdated: 'evt:project:updated',
+  EvtScriptChanged: 'evt:script:changed'
+} as const
