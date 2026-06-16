@@ -29,9 +29,10 @@
   --ring: oklch(0.6 0 0);
 
   --brand: oklch(0.28 0 0);
-  --run: oklch(0.32 0 0);
-  --warn: oklch(0.55 0 0);
-  --idle: oklch(0.75 0 0);
+  /* status colors carry hue so states are distinguishable (UI elsewhere stays neutral) */
+  --run: oklch(0.6 0.15 150); /* 运行中 — 绿 */
+  --warn: oklch(0.72 0.15 70); /* 启动中 — 琥珀 */
+  --idle: oklch(0.75 0 0); /* 空闲/已退出 — 灰 */
 
   --sheen: rgba(0, 0, 0, 0.02);
 
@@ -63,9 +64,10 @@
   --ring: oklch(0.55 0 0);
 
   --brand: oklch(0.92 0 0);
-  --run: oklch(0.95 0 0);
-  --warn: oklch(0.72 0 0);
-  --idle: oklch(0.45 0 0);
+  /* status colors carry hue so states are distinguishable (UI elsewhere stays neutral) */
+  --run: oklch(0.74 0.16 152); /* 运行中 — 绿 */
+  --warn: oklch(0.8 0.15 75); /* 启动中 — 琥珀 */
+  --idle: oklch(0.45 0 0); /* 空闲/已退出 — 灰 */
 
   --sheen: rgba(255, 255, 255, 0.05);
 
