@@ -220,9 +220,9 @@ export function SettingsDialog(): JSX.Element {
         </DialogTrigger>
       </Hint>
 
-      <DialogContent className="flex h-[520px] max-h-[85vh] w-[min(700px,calc(100vw-2rem))] max-w-none gap-0 overflow-hidden p-0">
+      <DialogContent className="flex h-[560px] max-h-[88vh] w-[min(880px,calc(100vw-2rem))] max-w-none gap-0 overflow-hidden p-0">
         {/* 左侧导航 */}
-        <aside className="flex w-48 shrink-0 flex-col border-r border-border bg-muted/30 p-3">
+        <aside className="flex w-52 shrink-0 flex-col border-r border-border bg-muted/30 p-3">
           <DialogTitle className="px-2 pb-2 pt-1 text-[13px] font-semibold tracking-tight text-foreground">
             设置
           </DialogTitle>
