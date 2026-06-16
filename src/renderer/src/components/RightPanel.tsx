@@ -76,11 +76,11 @@ function Tab({
   )
 }
 
-// tab 前缀图标槽位：默认显示传入的 icon，hover tab 时原位切换为关闭按钮（关闭按钮自带 hover 态）
+// tab 最左图标槽位：默认显示类型 icon，hover tab 时原位切换为关闭按钮（关闭按钮自带 hover 态）
 function TabIcon({ icon, onClose }: { icon: ReactNode; onClose: () => void }): JSX.Element {
   return (
     <span className="relative flex h-4 w-4 shrink-0 items-center justify-center">
-      <span className="flex items-center justify-center text-muted-foreground transition-opacity group-hover/tab:opacity-0">
+      <span className="flex items-center justify-center transition-opacity group-hover/tab:opacity-0">
         {icon}
       </span>
       <button
@@ -94,6 +94,19 @@ function TabIcon({ icon, onClose }: { icon: ReactNode; onClose: () => void }): J
         <X className="h-3 w-3" />
       </button>
     </span>
+  )
+}
+
+// tab 右侧状态灯（仅终端）
+function StatusDot({ status }: { status?: string }): JSX.Element {
+  return (
+    <span
+      className={cn(
+        'h-1.5 w-1.5 shrink-0 rounded-full',
+        DOT[status ?? ''] ?? 'bg-idle',
+        status === 'running' && 'glow-run breathe'
+      )}
+    />
   )
 }
 
@@ -126,7 +139,7 @@ export function RightPanel({ project }: { project: Project }): JSX.Element {
   return (
     <div className="flex h-full w-full min-w-0 flex-col overflow-hidden bg-background">
       {/* unified tab bar — scrollbar hidden so it doesn't consume height */}
-      <div className="no-scrollbar flex h-9 shrink-0 items-center gap-1 overflow-x-auto border-b border-border bg-card/40 px-2">
+      <div className="no-scrollbar flex h-9 shrink-0 items-center gap-1 overflow-x-auto border-b border-border bg-card/40 px-1">
         {total === 0 ? (
           <div className="flex items-center gap-2 px-1 text-xs text-muted-foreground">
             <SquareTerminal className="h-3.5 w-3.5" />
@@ -134,29 +147,19 @@ export function RightPanel({ project }: { project: Project }): JSX.Element {
           </div>
         ) : (
           <>
-            {termTabs.map((key) => {
-              const status = sessions[key]?.status
-              return (
-                <Tab key={key} active={activeTermKey === key} onClick={() => openTab(key)}>
-                  <TabIcon
-                    onClose={() => closeTab(key)}
-                    icon={
-                      <span
-                        className={cn(
-                          'h-1.5 w-1.5 rounded-full',
-                          DOT[status ?? ''] ?? 'bg-idle',
-                          status === 'running' && 'glow-run breathe'
-                        )}
-                      />
-                    }
-                  />
-                  <span className="font-mono">{tabLabel(key)}</span>
-                </Tab>
-              )
-            })}
+            {termTabs.map((key) => (
+              <Tab key={key} active={activeTermKey === key} onClick={() => openTab(key)}>
+                <TabIcon
+                  onClose={() => closeTab(key)}
+                  icon={<SquareTerminal className="h-3.5 w-3.5" />}
+                />
+                <span className="font-mono">{tabLabel(key)}</span>
+                <StatusDot status={sessions[key]?.status} />
+              </Tab>
+            ))}
             {envTabs.map((p) => (
               <Tab key={p} active={activeEnvPath === p} onClick={() => openEnvFile(p)}>
-                <TabIcon onClose={() => closeEnv(p)} icon={<FileCog className="h-3 w-3" />} />
+                <TabIcon onClose={() => closeEnv(p)} icon={<FileCog className="h-3.5 w-3.5" />} />
                 <span className="font-mono">{fileName(p)}</span>
               </Tab>
             ))}
