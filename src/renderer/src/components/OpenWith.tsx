@@ -63,7 +63,7 @@ export function OpenWith({ path }: { path: string }): JSX.Element {
           <AppGlyph app={def} />
         </button>
       </Hint>
-      <DropdownMenu>
+      <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <button
             aria-label="选择打开方式"

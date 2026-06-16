@@ -156,6 +156,13 @@ button:not(:disabled),
 .no-drag {
   -webkit-app-region: no-drag;
 }
+/* While a Radix popper (tooltip / dropdown / popover) is open, neutralize
+   drag regions. macOS swallows mouse events over `app-region: drag`, so the
+   renderer never sees the pointerdown that Radix needs to dismiss the overlay
+   — without this, clicking the draggable header won't close the menu/tooltip. */
+body:has([data-radix-popper-content-wrapper]) .drag {
+  -webkit-app-region: no-drag;
+}
 
 /* subtle top-edge highlight for elevated surfaces */
 .sheen {
