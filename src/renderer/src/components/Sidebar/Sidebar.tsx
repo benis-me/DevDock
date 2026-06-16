@@ -2,14 +2,40 @@ import type { JSX } from 'react'
 import { useAppStore } from '@/store/useAppStore'
 import { ProjectRow } from './ProjectRow'
 import { ThemeToggle } from '@/components/ThemeToggle'
+import { Hint } from '@/components/ui/hint'
 import { Plus, FolderPlus } from 'lucide-react'
 
-export function Sidebar(): JSX.Element {
+export function Sidebar({ collapsed = false }: { collapsed?: boolean }): JSX.Element {
   const projects = useAppStore((s) => s.projects)
   const addProject = useAppStore((s) => s.addProject)
 
+  if (collapsed) {
+    return (
+      <aside className="sheen flex h-full w-full flex-col items-center overflow-hidden bg-card/60">
+        <div className="drag h-9 w-full shrink-0" />
+        <Hint label="添加项目" side="right">
+          <button
+            onClick={addProject}
+            aria-label="添加项目"
+            className="no-drag mb-1 flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition hover:bg-accent hover:text-foreground active:scale-90"
+          >
+            <Plus className="h-4 w-4" />
+          </button>
+        </Hint>
+        <div className="no-scrollbar flex w-full flex-1 flex-col items-center gap-1 overflow-y-auto overflow-x-hidden py-1">
+          {projects.map((p) => (
+            <ProjectRow key={p.id} project={p} collapsed />
+          ))}
+        </div>
+        <div className="flex w-full justify-center border-t border-border py-2">
+          <ThemeToggle collapsed />
+        </div>
+      </aside>
+    )
+  }
+
   return (
-    <aside className="sheen flex w-64 shrink-0 flex-col border-r border-border bg-card/60">
+    <aside className="sheen flex h-full w-full flex-col overflow-hidden bg-card/60">
       {/* drag strip — clears the macOS traffic lights and lets the window be dragged */}
       <div className="drag h-9 shrink-0" />
 
@@ -18,14 +44,15 @@ export function Sidebar(): JSX.Element {
         <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
           项目
         </span>
-        <button
-          onClick={addProject}
-          title="添加项目"
-          aria-label="添加项目"
-          className="no-drag flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-        >
-          <Plus className="h-4 w-4" />
-        </button>
+        <Hint label="添加项目">
+          <button
+            onClick={addProject}
+            aria-label="添加项目"
+            className="no-drag flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground transition hover:bg-accent hover:text-foreground active:scale-90"
+          >
+            <Plus className="h-4 w-4" />
+          </button>
+        </Hint>
       </div>
 
       {/* project list */}

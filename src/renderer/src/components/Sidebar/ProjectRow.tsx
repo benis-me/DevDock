@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { Hint } from '@/components/ui/hint'
 import {
   MoreHorizontal,
   Trash2,
@@ -35,7 +36,13 @@ function shortenPath(p: string): string {
   return m ? '~' + (m[1] ?? '') : p
 }
 
-export function ProjectRow({ project }: { project: Project }): JSX.Element {
+export function ProjectRow({
+  project,
+  collapsed = false
+}: {
+  project: Project
+  collapsed?: boolean
+}): JSX.Element {
   const selected = useAppStore((s) => s.selectedProjectId === project.id)
   const selectProject = useAppStore((s) => s.selectProject)
   const removeProject = useAppStore((s) => s.removeProject)
@@ -58,115 +65,28 @@ export function ProjectRow({ project }: { project: Project }): JSX.Element {
     renameProject(project.id, draft.trim() || project.name)
     setRenaming(false)
   }
+  const startRename = (): void => {
+    setDraft(project.name)
+    setRenaming(true)
+  }
 
   const monogram = project.name.trim().charAt(0).toUpperCase() || '·'
 
-  return (
+  const avatar = (
+    <div
+      className={cn(
+        'flex h-7 w-7 shrink-0 items-center justify-center rounded-md border text-[11px] font-semibold',
+        project.missing
+          ? 'border-destructive/40 bg-destructive/10 text-destructive'
+          : 'border-border bg-muted/70 text-muted-foreground'
+      )}
+    >
+      {project.missing ? <AlertTriangle className="h-3.5 w-3.5" /> : monogram}
+    </div>
+  )
+
+  const dialogs = (
     <>
-      <div
-        onClick={() => selectProject(project.id)}
-        onDoubleClick={() => {
-          setDraft(project.name)
-          setRenaming(true)
-        }}
-        title="双击重命名"
-        className={cn(
-          'group relative flex cursor-pointer items-center gap-2.5 rounded-md py-1.5 pl-2.5 pr-1.5 transition-colors',
-          selected ? 'bg-accent' : menuOpen ? 'bg-accent/50' : 'hover:bg-accent/50'
-        )}
-      >
-        {selected && (
-          <span className="absolute inset-y-1.5 left-0 w-0.5 rounded-full bg-brand" />
-        )}
-
-        {/* monogram avatar */}
-        <div
-          className={cn(
-            'flex h-7 w-7 shrink-0 items-center justify-center rounded-md border text-[11px] font-semibold',
-            project.missing
-              ? 'border-destructive/40 bg-destructive/10 text-destructive'
-              : 'border-border bg-muted/70 text-muted-foreground'
-          )}
-        >
-          {project.missing ? <AlertTriangle className="h-3.5 w-3.5" /> : monogram}
-        </div>
-
-        {/* name + path */}
-        <div className="min-w-0 flex-1">
-          <div
-            className={cn(
-              'truncate text-[13px] font-medium',
-              selected ? 'text-accent-foreground' : 'text-foreground'
-            )}
-          >
-            {project.name}
-          </div>
-          <div className="truncate font-mono text-[11px] text-muted-foreground">
-            {shortenPath(project.path)}
-          </div>
-        </div>
-
-        {/* running badge — hidden on hover to reveal actions */}
-        {runningCount > 0 && (
-          <span className="flex items-center gap-1 rounded-full bg-run/15 px-1.5 py-0.5 text-[10px] font-medium text-run group-hover:hidden">
-            <span className="glow-run h-1.5 w-1.5 rounded-full bg-run" />
-            {runningCount}
-          </span>
-        )}
-
-        {/* hover actions: delete + menu (kept visible while the menu is open) */}
-        <div
-          className={cn('items-center gap-0.5', menuOpen ? 'flex' : 'hidden group-hover:flex')}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <button
-            title="移除"
-            aria-label="移除项目"
-            onClick={() => setConfirmRemove(true)}
-            className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-destructive/15 hover:text-destructive"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
-          <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
-            <DropdownMenuTrigger asChild>
-              <button
-                title="更多"
-                aria-label="更多操作"
-                className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-              >
-                <MoreHorizontal className="h-4 w-4" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" sideOffset={6} className="w-44 shadow-lg">
-              <DropdownMenuItem
-                onClick={() => {
-                  setDraft(project.name)
-                  setRenaming(true)
-                }}
-              >
-                <Pencil /> 重命名
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => rescanProject(project.id)}>
-                <RefreshCw /> 重新扫描
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => window.devdock.shell.openPath(project.path)}>
-                <FolderOpen /> 打开文件夹
-              </DropdownMenuItem>
-              {project.missing && (
-                <DropdownMenuItem onClick={() => relocateProject(project.id)}>
-                  <MapPin /> 重新定位…
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem variant="destructive" onClick={() => setConfirmRemove(true)}>
-                <Trash2 /> 移除项目
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
-
-      {/* rename dialog */}
       <Dialog open={renaming} onOpenChange={setRenaming}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
@@ -189,7 +109,6 @@ export function ProjectRow({ project }: { project: Project }): JSX.Element {
         </DialogContent>
       </Dialog>
 
-      {/* remove confirmation */}
       <Dialog open={confirmRemove} onOpenChange={setConfirmRemove}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
@@ -214,6 +133,121 @@ export function ProjectRow({ project }: { project: Project }): JSX.Element {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </>
+  )
+
+  if (collapsed) {
+    return (
+      <>
+        <Hint label={project.name} side="right">
+          <button
+            onClick={() => selectProject(project.id)}
+            onDoubleClick={startRename}
+            aria-label={project.name}
+            className={cn(
+              'relative flex h-9 w-9 shrink-0 items-center justify-center rounded-md transition-colors',
+              selected ? 'bg-accent' : 'hover:bg-accent/50'
+            )}
+          >
+            {selected && <span className="absolute inset-y-1.5 left-0 w-[3px] rounded-r-full bg-brand" />}
+            {avatar}
+            {runningCount > 0 && (
+              <span className="glow-run breathe absolute right-1 top-1 h-2 w-2 rounded-full bg-run ring-2 ring-card" />
+            )}
+          </button>
+        </Hint>
+        {dialogs}
+      </>
+    )
+  }
+
+  return (
+    <>
+      <div
+        onClick={() => selectProject(project.id)}
+        onDoubleClick={startRename}
+        title="双击重命名"
+        className={cn(
+          'group relative flex cursor-pointer items-center gap-2.5 rounded-md py-1.5 pl-2.5 pr-1.5 transition-colors',
+          selected ? 'bg-accent' : menuOpen ? 'bg-accent/50' : 'hover:bg-accent/50'
+        )}
+      >
+        {selected && <span className="absolute inset-y-1.5 left-0 w-0.5 rounded-full bg-brand" />}
+
+        {avatar}
+
+        <div className="min-w-0 flex-1">
+          <div
+            className={cn(
+              'truncate text-[13px] font-medium',
+              selected ? 'text-accent-foreground' : 'text-foreground'
+            )}
+          >
+            {project.name}
+          </div>
+          <div className="truncate font-mono text-[11px] text-muted-foreground">
+            {shortenPath(project.path)}
+          </div>
+        </div>
+
+        {runningCount > 0 && (
+          <span className="flex items-center gap-1 rounded-full bg-run/15 px-1.5 py-0.5 text-[10px] font-medium text-run group-hover:hidden">
+            <span className="glow-run breathe h-1.5 w-1.5 rounded-full bg-run" />
+            {runningCount}
+          </span>
+        )}
+
+        <div
+          className={cn('items-center gap-0.5', menuOpen ? 'flex' : 'hidden group-hover:flex')}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            title="移除"
+            aria-label="移除项目"
+            onClick={() => setConfirmRemove(true)}
+            className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-destructive/15 hover:text-destructive"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+          <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen} modal={false}>
+            <DropdownMenuTrigger asChild>
+              <button
+                title="更多"
+                aria-label="更多操作"
+                className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              sideOffset={6}
+              className="w-44 shadow-lg"
+              onCloseAutoFocus={(e) => e.preventDefault()}
+            >
+              <DropdownMenuItem onClick={startRename}>
+                <Pencil /> 重命名
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => rescanProject(project.id)}>
+                <RefreshCw /> 重新扫描
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => window.devdock.shell.openPath(project.path)}>
+                <FolderOpen /> 打开文件夹
+              </DropdownMenuItem>
+              {project.missing && (
+                <DropdownMenuItem onClick={() => relocateProject(project.id)}>
+                  <MapPin /> 重新定位…
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem variant="destructive" onClick={() => setConfirmRemove(true)}>
+                <Trash2 /> 移除项目
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+      {dialogs}
     </>
   )
 }

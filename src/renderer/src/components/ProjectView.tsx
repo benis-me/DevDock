@@ -1,19 +1,19 @@
 import type { JSX } from 'react'
+import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels'
 import { useAppStore } from '@/store/useAppStore'
 import { ScriptList } from '@/components/ScriptList/ScriptList'
-import { TerminalDock } from '@/components/Terminal/TerminalDock'
-import { EnvEditor } from '@/components/Env/EnvEditor'
+import { RightPanel } from '@/components/RightPanel'
+import { Hint } from '@/components/ui/hint'
 import { RefreshCw, FolderOpen, SquareTerminal, Plus } from 'lucide-react'
 
 export function ProjectView(): JSX.Element {
   const project = useAppStore((s) => s.projects.find((p) => p.id === s.selectedProjectId))
   const rescan = useAppStore((s) => s.rescanProject)
   const addProject = useAppStore((s) => s.addProject)
-  const activeEnvPath = useAppStore((s) => s.activeEnvPath)
 
   if (!project) {
     return (
-      <div className="drag flex flex-1 flex-col items-center justify-center gap-5 px-6">
+      <div className="drag flex h-full w-full flex-col items-center justify-center gap-5 px-6">
         <div className="glow-run flex h-16 w-16 items-center justify-center rounded-2xl bg-brand/10 text-brand">
           <SquareTerminal className="h-8 w-8" strokeWidth={1.5} />
         </div>
@@ -34,10 +34,10 @@ export function ProjectView(): JSX.Element {
   }
 
   return (
-    <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+    <div className="flex h-full w-full min-w-0 flex-col overflow-hidden">
       <header className="drag flex h-11 items-center gap-2 border-b border-border px-4">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
+        <Hint label={project.path} side="bottom" delay={500}>
+          <div className="no-drag flex min-w-0 items-center gap-2">
             <span className="truncate text-[13px] font-semibold tracking-tight text-foreground">
               {project.name}
             </span>
@@ -47,28 +47,38 @@ export function ProjectView(): JSX.Element {
               </span>
             )}
           </div>
-          <div className="truncate font-mono text-[11px] text-muted-foreground">{project.path}</div>
-        </div>
-        <button
-          title="重新扫描"
-          aria-label="重新扫描"
-          onClick={() => rescan(project.id)}
-          className="no-drag flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-        >
-          <RefreshCw className="h-4 w-4" />
-        </button>
-        <button
-          title="打开文件夹"
-          aria-label="打开文件夹"
-          onClick={() => window.devdock.shell.openPath(project.path)}
-          className="no-drag flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-        >
-          <FolderOpen className="h-4 w-4" />
-        </button>
+        </Hint>
+        <div className="flex-1" />
+        <Hint label="重新扫描">
+          <button
+            aria-label="重新扫描"
+            onClick={() => rescan(project.id)}
+            className="no-drag flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition hover:bg-accent hover:text-foreground active:scale-95"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </button>
+        </Hint>
+        <Hint label="打开文件夹">
+          <button
+            aria-label="打开文件夹"
+            onClick={() => window.devdock.shell.openPath(project.path)}
+            className="no-drag flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition hover:bg-accent hover:text-foreground active:scale-95"
+          >
+            <FolderOpen className="h-4 w-4" />
+          </button>
+        </Hint>
       </header>
-      <div className="flex min-h-0 flex-1">
-        <ScriptList project={project} />
-        {activeEnvPath ? <EnvEditor path={activeEnvPath} /> : <TerminalDock />}
+
+      <div className="min-h-0 flex-1">
+        <PanelGroup direction="horizontal" autoSaveId="devdock-main">
+          <Panel defaultSize={42} minSize={24} className="flex">
+            <ScriptList project={project} />
+          </Panel>
+          <PanelResizeHandle className="resize-handle" />
+          <Panel minSize={30} className="flex">
+            <RightPanel project={project} />
+          </Panel>
+        </PanelGroup>
       </div>
     </div>
   )

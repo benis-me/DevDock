@@ -51,7 +51,7 @@ const editorTheme = EditorView.theme({
   }
 })
 
-export function EnvEditor({ path }: { path: string }): JSX.Element {
+export function EnvEditor({ path, visible }: { path: string; visible: boolean }): JSX.Element {
   const hostRef = useRef<HTMLDivElement>(null)
   const viewRef = useRef<EditorView | null>(null)
   const savedRef = useRef('')
@@ -82,6 +82,11 @@ export function EnvEditor({ path }: { path: string }): JSX.Element {
   const reloadFromDisk = (): void => {
     window.devdock.env.read(path).then(replaceContent)
   }
+
+  // 切回该 tab 时让 CodeMirror 重新测量（display:none 期间无法布局）
+  useEffect(() => {
+    if (visible) setTimeout(() => viewRef.current?.requestMeasure(), 0)
+  }, [visible])
 
   // mount / re-create the editor when the file changes
   useEffect(() => {
@@ -140,7 +145,10 @@ export function EnvEditor({ path }: { path: string }): JSX.Element {
   }, [path])
 
   return (
-    <div className="flex min-w-0 flex-1 flex-col overflow-hidden bg-background">
+    <div
+      className="h-full w-full flex-col overflow-hidden bg-background"
+      style={{ display: visible ? 'flex' : 'none' }}
+    >
       <div className="flex h-9 shrink-0 items-center gap-2 border-b border-border px-3">
         <FileCog className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
         <span className="shrink-0 font-mono text-xs text-foreground">{fileName(path)}</span>

@@ -7,8 +7,9 @@ interface AppState {
   sessions: Record<string, SessionState>
   selectedProjectId?: string
   selectedScriptId?: string // sessionKey of focused terminal tab
-  openTabs: string[] // sessionKeys
-  activeEnvPath?: string // absolute path of the .env file open in the editor (right panel)
+  openTabs: string[] // terminal sessionKeys
+  openEnvPaths: string[] // open .env editor tabs (absolute paths)
+  activeEnvPath?: string // when set, the env tab is the active right-panel tab
   scriptPrefs: Record<string, ScriptPrefs> // key: sessionKey
   portlessAvailable: boolean
   theme: ThemeMode
@@ -26,6 +27,7 @@ interface AppState {
   openTab(key: string): void
   closeTab(key: string): void
   openEnvFile(path: string): void
+  closeEnv(path: string): void
   setPortless(projectId: string, scriptId: string, enabled: boolean): Promise<void>
   setTheme(theme: ThemeMode): Promise<void>
   applyThemeClass(): void
@@ -39,6 +41,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   projects: [],
   sessions: {},
   openTabs: [],
+  openEnvPaths: [],
   scriptPrefs: {},
   portlessAvailable: false,
   theme: 'system',
@@ -111,14 +114,27 @@ export const useAppStore = create<AppState>((set, get) => ({
   async removeProject(id) {
     await window.devdock.projects.remove(id)
     set((st) => {
+      const removed = st.projects.find((p) => p.id === id)
       const projects = st.projects.filter((p) => p.id !== id)
       const openTabs = st.openTabs.filter((k) => !k.startsWith(id + '::'))
+      const openEnvPaths = removed
+        ? st.openEnvPaths.filter((p) => !p.startsWith(removed.path))
+        : st.openEnvPaths
       const selectedProjectId =
         st.selectedProjectId === id ? projects[0]?.id : st.selectedProjectId
       const projectTabs = selectedProjectId
         ? openTabs.filter((k) => k.startsWith(selectedProjectId + '::'))
         : []
-      return { projects, openTabs, selectedProjectId, selectedScriptId: projectTabs.at(-1) }
+      const activeEnvPath =
+        removed && st.activeEnvPath?.startsWith(removed.path) ? undefined : st.activeEnvPath
+      return {
+        projects,
+        openTabs,
+        openEnvPaths,
+        selectedProjectId,
+        selectedScriptId: projectTabs.at(-1),
+        activeEnvPath
+      }
     })
   },
 
@@ -162,7 +178,17 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   openEnvFile(path) {
-    set({ activeEnvPath: path })
+    set((st) => ({
+      openEnvPaths: st.openEnvPaths.includes(path) ? st.openEnvPaths : [...st.openEnvPaths, path],
+      activeEnvPath: path
+    }))
+  },
+
+  closeEnv(path) {
+    set((st) => ({
+      openEnvPaths: st.openEnvPaths.filter((p) => p !== path),
+      activeEnvPath: st.activeEnvPath === path ? undefined : st.activeEnvPath
+    }))
   },
 
   async setPortless(projectId, scriptId, enabled) {

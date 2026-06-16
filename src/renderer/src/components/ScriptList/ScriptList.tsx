@@ -75,7 +75,7 @@ function WorkspaceBlock({ project, ws }: { project: Project; ws: WorkspacePkg })
 export function ScriptList({ project }: { project: Project }): JSX.Element {
   if (project.missing) {
     return (
-      <div className="flex w-[42%] min-w-[320px] shrink-0 flex-col items-center justify-center gap-2 border-r border-border p-6 text-center">
+      <div className="flex h-full w-full flex-col items-center justify-center gap-2 p-6 text-center">
         <FileWarning className="h-7 w-7 text-destructive/70" strokeWidth={1.5} />
         <p className="text-sm text-muted-foreground">项目目录不存在</p>
         <p className="text-xs text-muted-foreground/70">通过右键菜单「重新定位」或移除该项目</p>
@@ -87,7 +87,7 @@ export function ScriptList({ project }: { project: Project }): JSX.Element {
   const envFiles = project.envFiles ?? []
 
   return (
-    <div className="w-[42%] min-w-[320px] shrink-0 overflow-y-auto overflow-x-hidden border-r border-border">
+    <div className="h-full w-full overflow-y-auto overflow-x-hidden">
       <div className="p-3">
         {!noScripts &&
           project.workspaces.map((ws) => (

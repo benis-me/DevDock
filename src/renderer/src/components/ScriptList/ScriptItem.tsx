@@ -78,7 +78,7 @@ export function ScriptItem({ projectId, def }: { projectId: string; def: ScriptD
             'h-2 w-2 shrink-0 rounded-full',
             DOT[status],
             status === 'starting' && 'animate-pulse',
-            status === 'running' && 'glow-run'
+            status === 'running' && 'glow-run breathe'
           )}
         />
         <div className="min-w-0 flex-1">

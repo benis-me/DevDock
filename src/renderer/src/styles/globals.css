@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -164,6 +165,55 @@ button:not(:disabled),
 /* soft glow for an active/running indicator (neutral) */
 .glow-run {
   box-shadow: 0 0 7px 0 color-mix(in oklab, var(--run) 55%, transparent);
+}
+
+/* keyboard focus ring (a11y) — :where() keeps specificity 0 so component rings still win */
+:where(button, [role="button"], a[href], [tabindex]:not([tabindex="-1"])):focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--color-background),
+    0 0 0 4px color-mix(in oklab, var(--color-ring) 55%, transparent);
+}
+
+/* subtle "alive" breathing for running indicators */
+@keyframes breathe {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+.breathe {
+  animation: breathe 2.4s ease-in-out infinite;
+}
+
+/* hide scrollbar but keep scrolling (terminal/env tab strip) */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* resizable panel drag handles */
+.resize-handle {
+  position: relative;
+  flex: 0 0 1px;
+  background: var(--color-border);
+  transition: background-color 0.15s;
+}
+.resize-handle::after {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inset-inline: -3px;
+}
+.resize-handle:hover,
+.resize-handle[data-resize-handle-state="hover"],
+.resize-handle[data-resize-handle-state="drag"] {
+  background: color-mix(in oklab, var(--color-foreground) 28%, transparent);
 }
 
 @media (prefers-reduced-motion: reduce) {
