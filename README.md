@@ -57,6 +57,27 @@ bun run test     # unit tests (vitest)
 bun run start    # preview a production build
 ```
 
+## Packaging
+
+DevDock packages with **electron-builder** (config lives in `package.json` →
+`build`; the app icon is `build/icon.png`).
+
+```bash
+bun run dist:mac   # build + package a macOS .dmg and .zip → release/
+bun run dist:dir   # build + an unpacked .app (fast, for local testing) → release/
+```
+
+`node-pty` is a native module: electron-builder rebuilds it for the bundled
+Electron and unpacks it from the asar automatically.
+
+**Unsigned local builds** (no Apple Developer ID): prefix with
+`CSC_IDENTITY_AUTO_DISCOVERY=false` to skip signing. For a real release, set the
+signing/notarization env (`CSC_LINK`, `CSC_KEY_PASSWORD`, `APPLE_ID`,
+`APPLE_APP_SPECIFIC_PASSWORD`, `APPLE_TEAM_ID`) — Gatekeeper rejects unsigned,
+un-notarized apps. The `publish` config targets GitHub Releases, so
+`electron-builder --publish always` (with `GH_TOKEN`) uploads the artifacts and
+auto-update feed.
+
 ## Project structure
 
 ```
