@@ -23,6 +23,7 @@ interface AppState {
   apps: AppInfo[]
   openWithDefault?: string
   theme: ThemeMode
+  isDark: boolean // 当前生效的明暗（system 已解析）
   settings: Settings
 
   init(): Promise<void>
@@ -64,6 +65,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   portlessAvailable: false,
   apps: [],
   theme: 'system',
+  isDark: false,
   settings: { ...DEFAULT_SETTINGS },
 
   async init() {
@@ -339,6 +341,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       theme === 'dark' ||
       (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
     document.documentElement.classList.toggle('dark', isDark)
+    set({ isDark })
   },
 
   applyStatus(s) {
