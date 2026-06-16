@@ -39,7 +39,7 @@ export function ProjectView(): JSX.Element {
 
   return (
     <div className="flex h-full w-full min-w-0 flex-col overflow-hidden">
-      <header className="drag flex h-11 items-center gap-2 border-b border-border px-4">
+      <header className="drag flex h-11 items-center gap-2 border-b border-border px-3">
         <Hint label={project.path} side="bottom" delay={500}>
           <div className="no-drag flex min-w-0 items-center gap-2">
             <span className="truncate text-[13px] font-semibold tracking-tight text-foreground">

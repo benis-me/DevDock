@@ -117,7 +117,7 @@ export function TerminalView({
 
   return (
     <div
-      className="h-full w-full px-3 py-2"
+      className="h-full w-full p-2.5"
       style={{ background: TERMINAL_BG, display: visible ? 'block' : 'none' }}
     >
       <div ref={ref} className="h-full w-full" />
