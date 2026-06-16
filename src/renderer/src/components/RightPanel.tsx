@@ -76,24 +76,20 @@ function Tab({
   )
 }
 
-// 终端 tab 右侧槽位：默认状态点，hover 时变关闭按钮（同位置切换）
-function TermSlot({ status, onClose }: { status?: string; onClose: () => void }): JSX.Element {
+// tab 前缀图标槽位：默认显示传入的 icon，hover tab 时原位切换为关闭按钮（关闭按钮自带 hover 态）
+function TabIcon({ icon, onClose }: { icon: ReactNode; onClose: () => void }): JSX.Element {
   return (
-    <span className="relative ml-0.5 flex h-3.5 w-3.5 items-center justify-center">
-      <span
-        className={cn(
-          'h-1.5 w-1.5 rounded-full transition-opacity group-hover/tab:opacity-0',
-          DOT[status ?? ''] ?? 'bg-idle',
-          status === 'running' && 'glow-run breathe'
-        )}
-      />
+    <span className="relative flex h-4 w-4 shrink-0 items-center justify-center">
+      <span className="flex items-center justify-center text-muted-foreground transition-opacity group-hover/tab:opacity-0">
+        {icon}
+      </span>
       <button
         onClick={(e) => {
           e.stopPropagation()
           onClose()
         }}
         aria-label="关闭"
-        className="absolute inset-0 flex items-center justify-center rounded opacity-0 transition-opacity hover:text-foreground group-hover/tab:opacity-100"
+        className="absolute inset-0 flex items-center justify-center rounded text-muted-foreground opacity-0 transition-all hover:bg-foreground/15 hover:text-foreground group-hover/tab:opacity-100"
       >
         <X className="h-3 w-3" />
       </button>
@@ -138,26 +134,30 @@ export function RightPanel({ project }: { project: Project }): JSX.Element {
           </div>
         ) : (
           <>
-            {termTabs.map((key) => (
-              <Tab key={key} active={activeTermKey === key} onClick={() => openTab(key)}>
-                <span className="font-mono">{tabLabel(key)}</span>
-                <TermSlot status={sessions[key]?.status} onClose={() => closeTab(key)} />
-              </Tab>
-            ))}
+            {termTabs.map((key) => {
+              const status = sessions[key]?.status
+              return (
+                <Tab key={key} active={activeTermKey === key} onClick={() => openTab(key)}>
+                  <TabIcon
+                    onClose={() => closeTab(key)}
+                    icon={
+                      <span
+                        className={cn(
+                          'h-1.5 w-1.5 rounded-full',
+                          DOT[status ?? ''] ?? 'bg-idle',
+                          status === 'running' && 'glow-run breathe'
+                        )}
+                      />
+                    }
+                  />
+                  <span className="font-mono">{tabLabel(key)}</span>
+                </Tab>
+              )
+            })}
             {envTabs.map((p) => (
               <Tab key={p} active={activeEnvPath === p} onClick={() => openEnvFile(p)}>
-                <FileCog className="h-3 w-3 shrink-0 opacity-70" />
+                <TabIcon onClose={() => closeEnv(p)} icon={<FileCog className="h-3 w-3" />} />
                 <span className="font-mono">{fileName(p)}</span>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    closeEnv(p)
-                  }}
-                  aria-label="关闭"
-                  className="ml-0.5 flex h-3.5 w-3.5 items-center justify-center rounded text-muted-foreground/60 opacity-0 transition-opacity hover:text-foreground group-hover/tab:opacity-100"
-                >
-                  <X className="h-3 w-3" />
-                </button>
               </Tab>
             ))}
           </>

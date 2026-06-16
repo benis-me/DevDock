@@ -8,27 +8,27 @@ import '@xterm/xterm/css/xterm.css'
 
 // background 必须与 globals.css 的 --term-bg 一致（DOM 底色靠该 CSS 变量自动跟随主题）
 const TERMINAL_THEME_DARK: ITheme = {
-  background: '#0c0f16',
-  foreground: '#d4d6dc',
-  cursor: '#d4d6dc',
-  cursorAccent: '#0c0f16',
-  selectionBackground: '#2c2f36',
-  black: '#3b3f47',
+  background: '#0d0d0d',
+  foreground: '#d4d4d4',
+  cursor: '#d4d4d4',
+  cursorAccent: '#0d0d0d',
+  selectionBackground: '#2a2a2a',
+  black: '#404040',
   red: '#f87171',
   green: '#34d399',
   yellow: '#fbbf24',
   blue: '#60a5fa',
   magenta: '#c084fc',
   cyan: '#22d3ee',
-  white: '#d4d6dc',
-  brightBlack: '#6b7280',
+  white: '#d4d4d4',
+  brightBlack: '#6b6b6b',
   brightRed: '#fca5a5',
   brightGreen: '#6ee7b7',
   brightYellow: '#fcd34d',
   brightBlue: '#93c5fd',
   brightMagenta: '#d8b4fe',
   brightCyan: '#67e8f9',
-  brightWhite: '#f3f4f6'
+  brightWhite: '#f4f4f4'
 }
 
 const TERMINAL_THEME_LIGHT: ITheme = {
