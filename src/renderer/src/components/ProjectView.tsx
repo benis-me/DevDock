@@ -7,12 +7,16 @@ import { ScriptList } from '@/components/ScriptList/ScriptList'
 import { RightPanel } from '@/components/RightPanel'
 import { OpenWith } from '@/components/OpenWith'
 import { Hint } from '@/components/ui/hint'
-import { RefreshCw, SquareTerminal, Plus } from 'lucide-react'
+import { RefreshCw, SquareTerminal, Plus, Play, Square, GitBranch } from 'lucide-react'
 
 export function ProjectView(): JSX.Element {
   const project = useAppStore((s) => s.projects.find((p) => p.id === s.selectedProjectId))
   const rescan = useAppStore((s) => s.rescanProject)
   const addProject = useAppStore((s) => s.addProject)
+  const sessions = useAppStore((s) => s.sessions)
+  const git = useAppStore((s) => (project ? s.gitStatuses[project.id] : undefined))
+  const startAllServices = useAppStore((s) => s.startAllServices)
+  const stopAllInProject = useAppStore((s) => s.stopAllInProject)
   const [rescanning, setRescanning] = useState(false)
 
   if (!project) {
@@ -37,6 +41,14 @@ export function ProjectView(): JSX.Element {
     )
   }
 
+  const projPrefix = project.id + '::'
+  const anyRunning = Object.entries(sessions).some(
+    ([k, s]) => k.startsWith(projPrefix) && (s.status === 'running' || s.status === 'starting')
+  )
+  const hasServices = project.workspaces.some((w) =>
+    w.scripts.some((d) => d.kind === 'long-running')
+  )
+
   return (
     <div className="flex h-full w-full min-w-0 flex-col overflow-hidden">
       <header className="drag flex h-11 items-center gap-2 border-b border-border px-3">
@@ -52,7 +64,39 @@ export function ProjectView(): JSX.Element {
             )}
           </div>
         </Hint>
+        {git?.branch && (
+          <span
+            className="no-drag flex shrink-0 items-center gap-1 text-[11px] text-muted-foreground"
+            title={`分支 ${git.branch}${git.dirty ? ` · ${git.changes} 处未提交` : ' · 干净'}`}
+          >
+            <GitBranch className="h-3 w-3 shrink-0" />
+            <span className="max-w-[140px] truncate">{git.branch}</span>
+            {git.dirty && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-warn" />}
+          </span>
+        )}
         <div className="flex-1" />
+        {hasServices && (
+          <Hint label="启动所有服务">
+            <button
+              aria-label="启动所有服务"
+              onClick={() => startAllServices(project.id)}
+              className="no-drag flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition hover:bg-run/15 hover:text-run active:scale-95"
+            >
+              <Play className="h-4 w-4" />
+            </button>
+          </Hint>
+        )}
+        {anyRunning && (
+          <Hint label="停止全部">
+            <button
+              aria-label="停止全部"
+              onClick={() => stopAllInProject(project.id)}
+              className="no-drag flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition hover:bg-destructive/15 hover:text-destructive active:scale-95"
+            >
+              <Square className="h-4 w-4" />
+            </button>
+          </Hint>
+        )}
         <Hint label="重新扫描">
           <button
             aria-label="重新扫描"

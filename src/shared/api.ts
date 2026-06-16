@@ -1,5 +1,6 @@
 import type {
   AppInfo,
+  GitInfo,
   PortProcess,
   Project,
   ScriptPrefs,
@@ -55,6 +56,9 @@ export interface DevDockApi {
     get(): Promise<Settings>
     set(partial: Partial<Settings>): Promise<Settings>
   }
+  git: {
+    statusAll(): Promise<Record<string, GitInfo | null>>
+  }
   ui: {
     getState(): Promise<UiState>
     setState(partial: Partial<UiState>): Promise<void>
@@ -69,6 +73,7 @@ export interface DevDockApi {
   onScriptChanged(cb: (sessionKey: string) => void): () => void
   onEnvChanged(cb: (path: string) => void): () => void
   onPortConflict(cb: (sessionKey: string, port: number) => void): () => void
+  onGitStatus(cb: (projectId: string, info: GitInfo | null) => void): () => void
 }
 
 declare global {

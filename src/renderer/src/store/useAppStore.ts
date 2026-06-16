@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type {
   AppInfo,
+  GitInfo,
   Project,
   ScriptPrefs,
   SessionState,
@@ -25,6 +26,7 @@ interface AppState {
   theme: ThemeMode
   isDark: boolean // 当前生效的明暗（system 已解析）
   settings: Settings
+  gitStatuses: Record<string, GitInfo | null>
 
   init(): Promise<void>
   selectProject(id: string): void
@@ -40,6 +42,8 @@ interface AppState {
   startScript(projectId: string, scriptId: string): Promise<void>
   stopScript(key: string): Promise<void>
   restartScript(projectId: string, scriptId: string): Promise<void>
+  startAllServices(projectId: string): Promise<void>
+  stopAllInProject(projectId: string): Promise<void>
   openTab(key: string): void
   closeTab(key: string): void
   openEnvFile(path: string): void
@@ -67,9 +71,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   theme: 'system',
   isDark: false,
   settings: { ...DEFAULT_SETTINGS },
+  gitStatuses: {},
 
   async init() {
-    const [projects, ui, sessions, scriptPrefs, portlessAvailable, apps, settings] =
+    const [projects, ui, sessions, scriptPrefs, portlessAvailable, apps, settings, gitStatuses] =
       await Promise.all([
         window.devdock.projects.list(),
         window.devdock.ui.getState(),
@@ -77,7 +82,8 @@ export const useAppStore = create<AppState>((set, get) => ({
         window.devdock.scripts.prefs(),
         window.devdock.scripts.portlessAvailable(),
         window.devdock.apps.list(),
-        window.devdock.settings.get()
+        window.devdock.settings.get(),
+        window.devdock.git.statusAll()
       ])
     const sessMap: Record<string, SessionState> = {}
     for (const s of sessions) sessMap[s.scriptId] = s
@@ -88,6 +94,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       portlessAvailable,
       apps,
       settings,
+      gitStatuses,
       openWithDefault: ui.openWithDefault,
       theme: ui.theme,
       selectedProjectId: ui.selectedProjectId ?? projects[0]?.id,
@@ -140,6 +147,9 @@ export const useAppStore = create<AppState>((set, get) => ({
     })
     window.devdock.onSessionUrl((key, url) => get().applyUrl(key, url))
     window.devdock.onProjectUpdated((p) => get().applyProjectUpdated(p))
+    window.devdock.onGitStatus((id, info) =>
+      set((st) => ({ gitStatuses: { ...st.gitStatuses, [id]: info } }))
+    )
 
     window.devdock.onScriptChanged((key) => {
       const [projectId, scriptId] = key.split('::')
@@ -271,6 +281,28 @@ export const useAppStore = create<AppState>((set, get) => ({
     const key = sessionKey(projectId, scriptId)
     get().openTab(key)
     await window.devdock.scripts.restart(projectId, scriptId)
+  },
+
+  async startAllServices(projectId) {
+    const p = get().projects.find((x) => x.id === projectId)
+    if (!p) return
+    for (const ws of p.workspaces) {
+      for (const def of ws.scripts) {
+        if (def.kind !== 'long-running') continue
+        const st = get().sessions[sessionKey(projectId, def.id)]?.status
+        if (st === 'running' || st === 'starting') continue
+        await get().startScript(projectId, def.id)
+      }
+    }
+  },
+
+  async stopAllInProject(projectId) {
+    const prefix = projectId + '::'
+    for (const [key, s] of Object.entries(get().sessions)) {
+      if (key.startsWith(prefix) && (s.status === 'running' || s.status === 'starting')) {
+        await get().stopScript(key)
+      }
+    }
   },
 
   openTab(key) {

@@ -4,9 +4,18 @@ import { basename, join } from 'path'
 import { randomUUID } from 'crypto'
 import { execSync } from 'child_process'
 import { parse as parseDotenv } from 'dotenv'
-import type { Config, Project, ScriptDef, ScriptPrefs, SessionState, Settings } from '@shared/types'
+import type {
+  Config,
+  GitInfo,
+  Project,
+  ScriptDef,
+  ScriptPrefs,
+  SessionState,
+  Settings
+} from '@shared/types'
 import { DEFAULT_SETTINGS } from '@shared/types'
 import { sessionKey, runCommand } from '@shared/util'
+import { GitService } from './services/GitService'
 
 function slugify(s: string): string {
   return s
@@ -27,6 +36,8 @@ export class AppController extends EventEmitter {
   private portlessOk = false
   readonly pm = new ProcessManager()
   private readonly ports = new PortService()
+  private readonly git = new GitService()
+  private gitStatuses = new Map<string, GitInfo | null>()
 
   constructor(
     configPath: string,
@@ -58,6 +69,19 @@ export class AppController extends EventEmitter {
     return this.ports.killPid(pid)
   }
 
+  // ---- git ----
+  getGitStatuses(): Record<string, GitInfo | null> {
+    return Object.fromEntries(this.gitStatuses)
+  }
+
+  async refreshGit(projectId: string): Promise<void> {
+    const p = this.getProject(projectId)
+    if (!p || p.missing) return
+    const info = await this.git.info(p.path)
+    this.gitStatuses.set(projectId, info)
+    this.emit('git:status', projectId, info)
+  }
+
   // ---- settings ----
   getSettings(): Settings {
     return this.config.settings
@@ -81,7 +105,10 @@ export class AppController extends EventEmitter {
   startWatchingAll(): void {
     // 重扫每个项目以填充 envFiles（旧配置可能没有）并建立监听
     for (const p of this.config.projects) {
-      if (!p.missing) this.rescanProject(p.id)
+      if (!p.missing) {
+        this.rescanProject(p.id)
+        void this.refreshGit(p.id)
+      }
     }
   }
 
@@ -103,6 +130,7 @@ export class AppController extends EventEmitter {
     this.config.projects.push(project)
     this.persist()
     this.watcher.watch(project)
+    void this.refreshGit(project.id)
     return project
   }
 
@@ -330,6 +358,7 @@ export class AppController extends EventEmitter {
     const { project, diff } = this.rescanProject(projectId)
     if (!project) return
     this.emit('project:updated', project)
+    void this.refreshGit(projectId)
     if (changedPath && /(^|[\\/])\.env(\..+)?$/.test(changedPath)) {
       this.emit('env:changed', changedPath)
     }

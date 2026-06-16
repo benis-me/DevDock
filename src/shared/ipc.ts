@@ -30,6 +30,7 @@ export const IPC = {
   PortsKillPid: 'ports:killPid',
   SettingsGet: 'settings:get',
   SettingsSet: 'settings:set',
+  GitStatusAll: 'git:statusAll',
   DialogPickDirectory: 'dialog:pickDirectory',
   UiGetState: 'ui:getState',
   UiSetState: 'ui:setState',
@@ -41,5 +42,6 @@ export const IPC = {
   EvtProjectUpdated: 'evt:project:updated',
   EvtScriptChanged: 'evt:script:changed',
   EvtEnvChanged: 'evt:env:changed',
-  EvtPortConflict: 'evt:port:conflict'
+  EvtPortConflict: 'evt:port:conflict',
+  EvtGitStatus: 'evt:git:status'
 } as const

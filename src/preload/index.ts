@@ -55,6 +55,9 @@ const api: DevDockApi = {
     get: () => ipcRenderer.invoke(IPC.SettingsGet),
     set: (partial) => ipcRenderer.invoke(IPC.SettingsSet, partial)
   },
+  git: {
+    statusAll: () => ipcRenderer.invoke(IPC.GitStatusAll)
+  },
   ui: {
     getState: () => ipcRenderer.invoke(IPC.UiGetState),
     setState: (partial) => ipcRenderer.invoke(IPC.UiSetState, partial)
@@ -72,7 +75,8 @@ const api: DevDockApi = {
   onProjectUpdated: (cb) => sub(IPC.EvtProjectUpdated, cb),
   onScriptChanged: (cb) => sub(IPC.EvtScriptChanged, cb),
   onEnvChanged: (cb) => sub(IPC.EvtEnvChanged, cb),
-  onPortConflict: (cb) => sub(IPC.EvtPortConflict, cb)
+  onPortConflict: (cb) => sub(IPC.EvtPortConflict, cb),
+  onGitStatus: (cb) => sub(IPC.EvtGitStatus, cb)
 }
 
 contextBridge.exposeInMainWorld('devdock', api)

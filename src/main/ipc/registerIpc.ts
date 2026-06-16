@@ -15,6 +15,7 @@ export function registerIpc(controller: AppController, getWindow: () => BrowserW
   controller.on('script:changed', (key) => send(IPC.EvtScriptChanged, key))
   controller.on('env:changed', (p) => send(IPC.EvtEnvChanged, p))
   controller.on('port:conflict', (key, port) => send(IPC.EvtPortConflict, key, port))
+  controller.on('git:status', (id, info) => send(IPC.EvtGitStatus, id, info))
 
   ipcMain.handle(IPC.ProjectsList, () => controller.listProjects())
   ipcMain.handle(IPC.ProjectsAdd, async () => {
@@ -69,6 +70,8 @@ export function registerIpc(controller: AppController, getWindow: () => BrowserW
 
   ipcMain.handle(IPC.SettingsGet, () => controller.getSettings())
   ipcMain.handle(IPC.SettingsSet, (_e, partial) => controller.setSettings(partial))
+
+  ipcMain.handle(IPC.GitStatusAll, () => controller.getGitStatuses())
 
   ipcMain.handle(IPC.UiGetState, () => controller.getUiState())
   ipcMain.handle(IPC.UiSetState, (_e, partial) => {

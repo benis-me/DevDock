@@ -50,6 +50,14 @@ export interface PortProcess {
   command: string
 }
 
+export interface GitInfo {
+  branch: string | null
+  dirty: boolean
+  changes: number // 改动文件数
+  ahead: number
+  behind: number
+}
+
 export interface UiState {
   theme: ThemeMode
   selectedProjectId?: string
