@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { Project, ScriptPrefs, SessionState, ThemeMode } from '@shared/types'
+import type { AppInfo, Project, ScriptPrefs, SessionState, ThemeMode } from '@shared/types'
 import { sessionKey } from '@shared/util'
 
 interface AppState {
@@ -12,15 +12,21 @@ interface AppState {
   activeEnvPath?: string // when set, the env tab is the active right-panel tab
   scriptPrefs: Record<string, ScriptPrefs> // key: sessionKey
   portlessAvailable: boolean
+  apps: AppInfo[]
+  openWithDefault?: string
   theme: ThemeMode
 
   init(): Promise<void>
   selectProject(id: string): void
   addProject(): Promise<void>
+  addProjectByPath(path: string): Promise<void>
   removeProject(id: string): Promise<void>
   renameProject(id: string, name: string): Promise<void>
   rescanProject(id: string): Promise<void>
   relocateProject(id: string): Promise<void>
+  reorderProjects(orderedIds: string[]): void
+  setPinned(id: string, pinned: boolean): Promise<void>
+  openWith(appId: string, path: string): Promise<void>
   startScript(projectId: string, scriptId: string): Promise<void>
   stopScript(key: string): Promise<void>
   restartScript(projectId: string, scriptId: string): Promise<void>
@@ -44,15 +50,17 @@ export const useAppStore = create<AppState>((set, get) => ({
   openEnvPaths: [],
   scriptPrefs: {},
   portlessAvailable: false,
+  apps: [],
   theme: 'system',
 
   async init() {
-    const [projects, ui, sessions, scriptPrefs, portlessAvailable] = await Promise.all([
+    const [projects, ui, sessions, scriptPrefs, portlessAvailable, apps] = await Promise.all([
       window.devdock.projects.list(),
       window.devdock.ui.getState(),
       window.devdock.sessions.list(),
       window.devdock.scripts.prefs(),
-      window.devdock.scripts.portlessAvailable()
+      window.devdock.scripts.portlessAvailable(),
+      window.devdock.apps.list()
     ])
     const sessMap: Record<string, SessionState> = {}
     for (const s of sessions) sessMap[s.scriptId] = s
@@ -61,10 +69,31 @@ export const useAppStore = create<AppState>((set, get) => ({
       sessions: sessMap,
       scriptPrefs,
       portlessAvailable,
+      apps,
+      openWithDefault: ui.openWithDefault,
       theme: ui.theme,
-      selectedProjectId: ui.selectedProjectId ?? projects[0]?.id
+      selectedProjectId: ui.selectedProjectId ?? projects[0]?.id,
+      // restore open tabs from last session
+      openTabs: ui.openTabs ?? [],
+      openEnvPaths: ui.openEnvPaths ?? [],
+      activeEnvPath: ui.activeEnvPath,
+      selectedScriptId: ui.selectedScriptId
     })
     get().applyThemeClass()
+
+    // persist open tabs across restarts (debounced by signature)
+    let lastSig = ''
+    useAppStore.subscribe((s) => {
+      const sig = JSON.stringify([s.openTabs, s.openEnvPaths, s.activeEnvPath, s.selectedScriptId])
+      if (sig === lastSig) return
+      lastSig = sig
+      window.devdock.ui.setState({
+        openTabs: s.openTabs,
+        openEnvPaths: s.openEnvPaths,
+        activeEnvPath: s.activeEnvPath,
+        selectedScriptId: s.selectedScriptId
+      })
+    })
 
     window.devdock.onSessionStatus((s) => {
       get().applyStatus(s)
@@ -106,9 +135,49 @@ export const useAppStore = create<AppState>((set, get) => ({
   async addProject() {
     const p = await window.devdock.projects.add()
     if (p) {
-      set((st) => ({ projects: [...st.projects, p], selectedProjectId: p.id }))
+      set((st) => ({
+        projects: st.projects.some((x) => x.id === p.id) ? st.projects : [...st.projects, p],
+        selectedProjectId: p.id
+      }))
       window.devdock.ui.setState({ selectedProjectId: p.id })
     }
+  },
+
+  async addProjectByPath(path) {
+    const p = await window.devdock.projects.addPath(path)
+    if (p) {
+      set((st) => ({
+        projects: st.projects.some((x) => x.id === p.id) ? st.projects : [...st.projects, p],
+        selectedProjectId: p.id,
+        activeEnvPath: undefined
+      }))
+      window.devdock.ui.setState({ selectedProjectId: p.id })
+    }
+  },
+
+  reorderProjects(orderedIds) {
+    set((st) => {
+      const byId = new Map(st.projects.map((p) => [p.id, p]))
+      const next = orderedIds
+        .map((id) => byId.get(id))
+        .filter((p): p is Project => p !== undefined)
+      for (const p of st.projects) if (!orderedIds.includes(p.id)) next.push(p)
+      return { projects: next }
+    })
+    window.devdock.projects.reorder(orderedIds)
+  },
+
+  async setPinned(id, pinned) {
+    set((st) => ({
+      projects: st.projects.map((p) => (p.id === id ? { ...p, pinned } : p))
+    }))
+    await window.devdock.projects.setPinned(id, pinned)
+  },
+
+  async openWith(appId, path) {
+    set({ openWithDefault: appId })
+    window.devdock.ui.setState({ openWithDefault: appId })
+    await window.devdock.apps.openWith(appId, path)
   },
 
   async removeProject(id) {

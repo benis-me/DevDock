@@ -3,8 +3,9 @@ import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels'
 import { useAppStore } from '@/store/useAppStore'
 import { ScriptList } from '@/components/ScriptList/ScriptList'
 import { RightPanel } from '@/components/RightPanel'
+import { OpenWith } from '@/components/OpenWith'
 import { Hint } from '@/components/ui/hint'
-import { RefreshCw, FolderOpen, SquareTerminal, Plus } from 'lucide-react'
+import { RefreshCw, SquareTerminal, Plus } from 'lucide-react'
 
 export function ProjectView(): JSX.Element {
   const project = useAppStore((s) => s.projects.find((p) => p.id === s.selectedProjectId))
@@ -58,15 +59,7 @@ export function ProjectView(): JSX.Element {
             <RefreshCw className="h-4 w-4" />
           </button>
         </Hint>
-        <Hint label="打开文件夹">
-          <button
-            aria-label="打开文件夹"
-            onClick={() => window.devdock.shell.openPath(project.path)}
-            className="no-drag flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition hover:bg-accent hover:text-foreground active:scale-95"
-          >
-            <FolderOpen className="h-4 w-4" />
-          </button>
-        </Hint>
+        <OpenWith path={project.path} />
       </header>
 
       <div className="min-h-0 flex-1">

@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron'
+import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import { IPC } from '@shared/ipc'
 import type { DevDockApi } from '@shared/api'
 
@@ -15,7 +15,10 @@ const api: DevDockApi = {
     remove: (id) => ipcRenderer.invoke(IPC.ProjectsRemove, id),
     rename: (id, name) => ipcRenderer.invoke(IPC.ProjectsRename, id, name),
     rescan: (id) => ipcRenderer.invoke(IPC.ProjectsRescan, id),
-    relocate: (id) => ipcRenderer.invoke(IPC.ProjectsRelocate, id)
+    relocate: (id) => ipcRenderer.invoke(IPC.ProjectsRelocate, id),
+    addPath: (p) => ipcRenderer.invoke(IPC.ProjectsAddPath, p),
+    reorder: (ids) => ipcRenderer.invoke(IPC.ProjectsReorder, ids),
+    setPinned: (id, pinned) => ipcRenderer.invoke(IPC.ProjectsSetPinned, id, pinned)
   },
   scripts: {
     start: (pid, sid) => ipcRenderer.invoke(IPC.ScriptsStart, pid, sid),
@@ -38,11 +41,16 @@ const api: DevDockApi = {
     read: (p) => ipcRenderer.invoke(IPC.EnvRead, p),
     write: (p, content) => ipcRenderer.invoke(IPC.EnvWrite, p, content)
   },
+  apps: {
+    list: () => ipcRenderer.invoke(IPC.AppsList),
+    openWith: (appId, p) => ipcRenderer.invoke(IPC.AppsOpenWith, appId, p)
+  },
   ui: {
     getState: () => ipcRenderer.invoke(IPC.UiGetState),
     setState: (partial) => ipcRenderer.invoke(IPC.UiSetState, partial)
   },
   sessions: { list: () => ipcRenderer.invoke(IPC.SessionsList) },
+  getPathForFile: (file) => webUtils.getPathForFile(file),
   onTerminalData: (cb) => sub(IPC.EvtTerminalData, cb),
   onSessionStatus: (cb) => sub(IPC.EvtSessionStatus, cb),
   onSessionUrl: (cb) => sub(IPC.EvtSessionUrl, cb),

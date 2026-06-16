@@ -25,6 +25,13 @@ export default function App(): JSX.Element {
     setCollapsed(!!sidebarRef.current?.isCollapsed())
   }, [])
 
+  const toggleSidebar = (): void => {
+    const p = sidebarRef.current
+    if (!p) return
+    if (p.isCollapsed()) p.expand()
+    else p.collapse()
+  }
+
   return (
     <TooltipProvider delayDuration={350} skipDelayDuration={120}>
       <div className="h-screen w-screen select-none overflow-hidden bg-background text-[13px] text-foreground antialiased">
@@ -42,7 +49,7 @@ export default function App(): JSX.Element {
             onExpand={() => setCollapsed(false)}
             className="flex"
           >
-            <Sidebar collapsed={collapsed} />
+            <Sidebar collapsed={collapsed} onToggle={toggleSidebar} />
           </Panel>
           <PanelResizeHandle className="resize-handle" />
           <Panel id="main" order={2} minSize={40} className="flex">

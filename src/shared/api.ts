@@ -1,13 +1,16 @@
-import type { Project, ScriptPrefs, SessionState, UiState } from './types'
+import type { AppInfo, Project, ScriptPrefs, SessionState, UiState } from './types'
 
 export interface DevDockApi {
   projects: {
     list(): Promise<Project[]>
     add(): Promise<Project | null>
+    addPath(path: string): Promise<Project | null>
     remove(id: string): Promise<void>
     rename(id: string, name: string): Promise<void>
     rescan(id: string): Promise<Project | null>
     relocate(id: string): Promise<Project | null>
+    reorder(orderedIds: string[]): Promise<void>
+    setPinned(id: string, pinned: boolean): Promise<void>
   }
   scripts: {
     start(projectId: string, scriptId: string): Promise<void>
@@ -30,11 +33,16 @@ export interface DevDockApi {
     read(path: string): Promise<string>
     write(path: string, content: string): Promise<void>
   }
+  apps: {
+    list(): Promise<AppInfo[]>
+    openWith(appId: string, path: string): Promise<void>
+  }
   ui: {
     getState(): Promise<UiState>
     setState(partial: Partial<UiState>): Promise<void>
   }
   sessions: { list(): Promise<SessionState[]> }
+  getPathForFile(file: File): string
   onTerminalData(cb: (sessionKey: string, chunk: string) => void): () => void
   onSessionStatus(cb: (state: SessionState) => void): () => void
   onSessionUrl(cb: (sessionKey: string, url: string) => void): () => void

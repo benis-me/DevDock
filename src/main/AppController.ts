@@ -57,6 +57,8 @@ export class AppController extends EventEmitter {
 
   addProjectFromPath(dirPath: string): Project | null {
     if (!existsSync(dirPath)) return null
+    const existing = this.config.projects.find((p) => p.path === dirPath)
+    if (existing) return existing
     const scanned = scanProject(dirPath)
     const project: Project = {
       id: randomUUID(),
@@ -86,6 +88,27 @@ export class AppController extends EventEmitter {
     const p = this.getProject(id)
     if (p) {
       p.name = name
+      this.persist()
+    }
+  }
+
+  reorderProjects(orderedIds: string[]): void {
+    const byId = new Map(this.config.projects.map((p) => [p.id, p]))
+    const next: Project[] = []
+    for (const id of orderedIds) {
+      const p = byId.get(id)
+      if (p) next.push(p)
+    }
+    // 兜底：把未在排序列表里的项目补到末尾
+    for (const p of this.config.projects) if (!orderedIds.includes(p.id)) next.push(p)
+    this.config.projects = next
+    this.persist()
+  }
+
+  setProjectPinned(id: string, pinned: boolean): void {
+    const p = this.getProject(id)
+    if (p) {
+      p.pinned = pinned
       this.persist()
     }
   }

@@ -28,7 +28,9 @@ import {
   Pencil,
   RefreshCw,
   FolderOpen,
-  MapPin
+  MapPin,
+  Pin,
+  PinOff
 } from 'lucide-react'
 
 function shortenPath(p: string): string {
@@ -49,6 +51,7 @@ export function ProjectRow({
   const renameProject = useAppStore((s) => s.renameProject)
   const rescanProject = useAppStore((s) => s.rescanProject)
   const relocateProject = useAppStore((s) => s.relocateProject)
+  const setPinned = useAppStore((s) => s.setPinned)
   const runningCount = useAppStore((s) => {
     const prefix = project.id + '::'
     return Object.values(s.sessions).filter(
@@ -177,13 +180,18 @@ export function ProjectRow({
         {avatar}
 
         <div className="min-w-0 flex-1">
-          <div
-            className={cn(
-              'truncate text-[13px] font-medium',
-              selected ? 'text-accent-foreground' : 'text-foreground'
+          <div className="flex items-center gap-1">
+            {project.pinned && (
+              <Pin className="h-3 w-3 shrink-0 -rotate-45 text-muted-foreground" />
             )}
-          >
-            {project.name}
+            <span
+              className={cn(
+                'truncate text-[13px] font-medium',
+                selected ? 'text-accent-foreground' : 'text-foreground'
+              )}
+            >
+              {project.name}
+            </span>
           </div>
           <div className="truncate font-mono text-[11px] text-muted-foreground">
             {shortenPath(project.path)}
@@ -233,6 +241,9 @@ export function ProjectRow({
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => window.devdock.shell.openPath(project.path)}>
                 <FolderOpen /> 打开文件夹
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setPinned(project.id, !project.pinned)}>
+                {project.pinned ? <PinOff /> : <Pin />} {project.pinned ? '取消置顶' : '置顶'}
               </DropdownMenuItem>
               {project.missing && (
                 <DropdownMenuItem onClick={() => relocateProject(project.id)}>

@@ -1,6 +1,7 @@
 import { ipcMain, dialog, shell, nativeTheme, BrowserWindow } from 'electron'
 import { IPC } from '@shared/ipc'
 import type { AppController } from '../AppController'
+import { detectApps, openWith } from '../services/appLauncher'
 
 export function registerIpc(controller: AppController, getWindow: () => BrowserWindow | null): void {
   const send = (channel: string, ...args: unknown[]): void => {
@@ -30,6 +31,11 @@ export function registerIpc(controller: AppController, getWindow: () => BrowserW
     if (res.canceled || !res.filePaths[0]) return null
     return controller.relocateProject(id, res.filePaths[0])
   })
+  ipcMain.handle(IPC.ProjectsAddPath, (_e, p: string) => controller.addProjectFromPath(p))
+  ipcMain.handle(IPC.ProjectsReorder, (_e, ids: string[]) => controller.reorderProjects(ids))
+  ipcMain.handle(IPC.ProjectsSetPinned, (_e, id: string, pinned: boolean) =>
+    controller.setProjectPinned(id, pinned)
+  )
 
   ipcMain.handle(IPC.ScriptsStart, (_e, pid: string, sid: string) => controller.startScript(pid, sid))
   ipcMain.handle(IPC.ScriptsStop, (_e, key: string) => controller.stopSession(key))
@@ -51,6 +57,9 @@ export function registerIpc(controller: AppController, getWindow: () => BrowserW
 
   ipcMain.handle(IPC.EnvRead, (_e, p: string) => controller.readEnvFile(p))
   ipcMain.handle(IPC.EnvWrite, (_e, p: string, content: string) => controller.writeEnvFile(p, content))
+
+  ipcMain.handle(IPC.AppsList, () => detectApps())
+  ipcMain.handle(IPC.AppsOpenWith, (_e, appId: string, folder: string) => openWith(appId, folder))
 
   ipcMain.handle(IPC.UiGetState, () => controller.getUiState())
   ipcMain.handle(IPC.UiSetState, (_e, partial) => {

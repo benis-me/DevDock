@@ -33,12 +33,26 @@ export interface Project {
   envFiles: EnvFile[]
   addedAt: number
   missing?: boolean
+  pinned?: boolean
+}
+
+export interface AppInfo {
+  id: string
+  name: string
+  kind: 'editor' | 'terminal' | 'other'
+  icon: string // data URL (PNG) of the app icon
 }
 
 export interface UiState {
   theme: ThemeMode
   selectedProjectId?: string
   lastSelectedScriptId?: string
+  openWithDefault?: string // last-used "open with" app id
+  // restored workspace (open tabs) across restarts
+  openTabs?: string[]
+  openEnvPaths?: string[]
+  activeEnvPath?: string
+  selectedScriptId?: string
 }
 
 export interface ScriptPrefs {
