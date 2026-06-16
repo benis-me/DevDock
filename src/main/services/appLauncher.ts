@@ -1,8 +1,8 @@
-import { app, shell } from 'electron'
-import { existsSync } from 'fs'
+import { shell } from 'electron'
+import { existsSync, readdirSync, readFileSync } from 'fs'
 import { join } from 'path'
-import { homedir } from 'os'
-import { execFile } from 'child_process'
+import { homedir, tmpdir } from 'os'
+import { execFile, execFileSync } from 'child_process'
 import type { AppInfo } from '@shared/types'
 
 interface KnownApp {
@@ -56,10 +56,21 @@ function findAppPath(appName: string): string | null {
 
 let cache: { apps: AppInfo[]; paths: Map<string, string> } | null = null
 
-async function iconFor(appPath: string): Promise<string> {
+const TMP_ICON = join(tmpdir(), 'devdock-app-icon.png')
+
+// 用 macOS 自带 sips 把 app 的 .icns 转成 PNG（各 app 各不相同，可靠）
+function iconFor(appPath: string): string {
   try {
-    const img = await app.getFileIcon(appPath, { size: 'normal' })
-    return img.toDataURL()
+    const resDir = join(appPath, 'Contents', 'Resources')
+    const icns = readdirSync(resDir).filter((f) => f.toLowerCase().endsWith('.icns'))
+    if (icns.length === 0) return ''
+    const pick = icns.find((f) => /appicon|^icon/i.test(f)) ?? icns[0]
+    execFileSync(
+      'sips',
+      ['-s', 'format', 'png', '-z', '64', '64', join(resDir, pick), '--out', TMP_ICON],
+      { stdio: 'ignore' }
+    )
+    return `data:image/png;base64,${readFileSync(TMP_ICON).toString('base64')}`
   } catch {
     return ''
   }
@@ -73,11 +84,11 @@ export async function detectApps(): Promise<AppInfo[]> {
     const appPath = findAppPath(k.appName)
     if (!appPath) continue
     paths.set(k.id, appPath)
-    apps.push({ id: k.id, name: k.name, kind: k.kind, icon: await iconFor(appPath) })
+    apps.push({ id: k.id, name: k.name, kind: k.kind, icon: iconFor(appPath) })
   }
   // Finder 总是可用
   paths.set('finder', FINDER_PATH)
-  apps.push({ id: 'finder', name: 'Finder', kind: 'other', icon: await iconFor(FINDER_PATH) })
+  apps.push({ id: 'finder', name: 'Finder', kind: 'other', icon: iconFor(FINDER_PATH) })
   cache = { apps, paths }
   return apps
 }

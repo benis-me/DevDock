@@ -167,8 +167,10 @@ button:not(:disabled),
   box-shadow: 0 0 7px 0 color-mix(in oklab, var(--run) 55%, transparent);
 }
 
-/* keyboard focus ring (a11y) — :where() keeps specificity 0 so component rings still win */
-:where(button, [role="button"], a[href], [tabindex]:not([tabindex="-1"])):focus-visible {
+/* keyboard focus ring (a11y) — :where() keeps specificity 0 so component rings still win.
+   Scoped to buttons/links only — NOT roving-tabindex widgets (menu items get their own
+   highlight), which otherwise showed a stray ring on hover. */
+:where(button, [role="button"], a[href]):focus-visible {
   outline: none;
   box-shadow:
     0 0 0 2px var(--color-background),
