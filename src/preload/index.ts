@@ -47,7 +47,8 @@ const api: DevDockApi = {
   },
   ports: {
     who: (port) => ipcRenderer.invoke(IPC.PortsWho, port),
-    kill: (port) => ipcRenderer.invoke(IPC.PortsKill, port)
+    kill: (port) => ipcRenderer.invoke(IPC.PortsKill, port),
+    killPid: (pid) => ipcRenderer.invoke(IPC.PortsKillPid, pid)
   },
   settings: {
     get: () => ipcRenderer.invoke(IPC.SettingsGet),

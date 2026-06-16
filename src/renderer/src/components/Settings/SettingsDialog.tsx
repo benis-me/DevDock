@@ -1,6 +1,14 @@
-import type { JSX, ReactNode } from 'react'
-import { useState } from 'react'
-import { Settings as SettingsIcon, Minus, Plus } from 'lucide-react'
+import type { JSX, ReactNode, ComponentType } from 'react'
+import {
+  Settings as SettingsIcon,
+  Minus,
+  Plus,
+  Palette,
+  SquareTerminal,
+  SlidersHorizontal,
+  Plug,
+  Info
+} from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -10,20 +18,33 @@ import {
   DialogTrigger
 } from '@/components/ui/dialog'
 import { Switch } from '@/components/ui/switch'
-import { Input } from '@/components/ui/input'
 import { Hint } from '@/components/ui/hint'
 import { ThemeToggle } from '@/components/ThemeToggle'
+import { PortTool } from './PortTool'
 import { useAppStore } from '@/store/useAppStore'
-import { cn } from '@/lib/utils'
 
 const FONT_MIN = 9
 const FONT_MAX = 20
 
-function SectionTitle({ children }: { children: ReactNode }): JSX.Element {
+function Section({
+  icon: Icon,
+  label,
+  children
+}: {
+  icon: ComponentType<{ className?: string }>
+  label: string
+  children: ReactNode
+}): JSX.Element {
   return (
-    <div className="mb-0.5 mt-3 text-[11px] font-medium uppercase tracking-wider text-muted-foreground first:mt-0">
-      {children}
-    </div>
+    <section>
+      <div className="mb-1.5 flex items-center gap-1.5 px-0.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+        <Icon className="h-3.5 w-3.5" />
+        {label}
+      </div>
+      <div className="divide-y divide-border/50 overflow-hidden rounded-xl border border-border/70 bg-muted/20">
+        {children}
+      </div>
+    </section>
   )
 }
 
@@ -37,7 +58,7 @@ function Row({
   children: ReactNode
 }): JSX.Element {
   return (
-    <div className="flex items-center justify-between gap-4 py-2.5">
+    <div className="flex min-h-[46px] items-center justify-between gap-4 px-3 py-2.5">
       <div className="min-w-0">
         <div className="text-[13px] font-medium text-foreground">{title}</div>
         {desc && <div className="mt-0.5 text-[11px] leading-snug text-muted-foreground">{desc}</div>}
@@ -63,7 +84,7 @@ function Stepper({
   const btn =
     'flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:opacity-40'
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-0.5 rounded-lg border border-border/70 bg-background p-0.5">
       <button
         className={btn}
         aria-label="减小"
@@ -92,26 +113,7 @@ export function SettingsDialog(): JSX.Element {
   const settings = useAppStore((s) => s.settings)
   const setSettings = useAppStore((s) => s.setSettings)
   const portlessAvailable = useAppStore((s) => s.portlessAvailable)
-  const killPort = useAppStore((s) => s.killPort)
-
-  const [portInput, setPortInput] = useState('')
-  const [busy, setBusy] = useState(false)
   const versions = window.devdock.versions
-
-  async function freePort(): Promise<void> {
-    const port = parseInt(portInput, 10)
-    if (!port || port < 1 || port > 65535) return
-    setBusy(true)
-    const killed = await killPort(port)
-    setBusy(false)
-    const { toast } = await import('sonner')
-    if (killed.length) {
-      toast.success(`已释放端口 ${port}`, { description: `终止了 ${killed.length} 个进程` })
-      setPortInput('')
-    } else {
-      toast(`端口 ${port} 未被占用`)
-    }
-  }
 
   return (
     <Dialog>
@@ -124,25 +126,21 @@ export function SettingsDialog(): JSX.Element {
         </DialogTrigger>
       </Hint>
 
-      <DialogContent className="max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>设置</DialogTitle>
-          <DialogDescription>偏好会自动保存。</DialogDescription>
+      <DialogContent className="max-h-[85vh] gap-0 overflow-y-auto p-0">
+        <DialogHeader className="border-b border-border px-5 py-4">
+          <DialogTitle className="text-[15px]">设置</DialogTitle>
+          <DialogDescription className="text-xs">偏好会自动保存。</DialogDescription>
         </DialogHeader>
 
-        <div className="-mt-1 divide-y divide-border/60">
-          {/* 外观 */}
-          <div className="pb-2">
-            <SectionTitle>外观</SectionTitle>
+        <div className="space-y-5 px-5 py-5">
+          <Section icon={Palette} label="外观">
             <Row title="主题" desc="浅色 / 深色 / 跟随系统">
               <ThemeToggle />
             </Row>
-          </div>
+          </Section>
 
-          {/* 终端 */}
-          <div className="py-2">
-            <SectionTitle>终端</SectionTitle>
-            <Row title="字号" desc={`${FONT_MIN}–${FONT_MAX} px，即时生效`}>
+          <Section icon={SquareTerminal} label="终端">
+            <Row title="字号" desc={`${FONT_MIN}–${FONT_MAX} px · 即时生效`}>
               <Stepper
                 value={settings.terminalFontSize}
                 min={FONT_MIN}
@@ -158,12 +156,10 @@ export function SettingsDialog(): JSX.Element {
                 onCheckedChange={(v) => setSettings({ terminalCursorBlink: v })}
               />
             </Row>
-          </div>
+          </Section>
 
-          {/* 行为 */}
-          <div className="py-2">
-            <SectionTitle>行为</SectionTitle>
-            <Row title="注入项目 .env" desc="启动脚本时合并 .env / .env.local 到环境变量">
+          <Section icon={SlidersHorizontal} label="行为">
+            <Row title="注入项目 .env" desc="启动脚本时合并 .env / .env.local">
               <Switch
                 label="注入项目 .env"
                 checked={settings.injectEnv}
@@ -173,9 +169,7 @@ export function SettingsDialog(): JSX.Element {
             <Row
               title="默认用 portless 启动"
               desc={
-                portlessAvailable
-                  ? '长任务在未单独设置时，默认走 portless'
-                  : '未检测到 portless，已禁用'
+                portlessAvailable ? '长任务未单独设置时默认走 portless' : '未检测到 portless，已禁用'
               }
             >
               <Switch
@@ -185,54 +179,29 @@ export function SettingsDialog(): JSX.Element {
                 onCheckedChange={(v) => setSettings({ portlessDefault: v })}
               />
             </Row>
-            <Row title="退出前确认" desc="仍有脚本运行时，退出前二次确认">
+            <Row title="退出前确认" desc="仍有脚本运行时退出二次确认">
               <Switch
                 label="退出前确认"
                 checked={settings.confirmOnQuit}
                 onCheckedChange={(v) => setSettings({ confirmOnQuit: v })}
               />
             </Row>
-          </div>
+          </Section>
 
-          {/* 端口工具 */}
-          <div className="py-2">
-            <SectionTitle>端口工具</SectionTitle>
-            <Row title="释放端口" desc="终止占用某个端口的进程（lsof + kill）">
-              <div className="flex items-center gap-2">
-                <Input
-                  type="number"
-                  inputMode="numeric"
-                  placeholder="如 5173"
-                  value={portInput}
-                  onChange={(e) => setPortInput(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && freePort()}
-                  className="h-8 w-24 font-mono text-[13px]"
-                />
-                <button
-                  onClick={freePort}
-                  disabled={busy || !portInput}
-                  className={cn(
-                    'h-8 rounded-md px-3 text-[13px] font-medium transition-colors',
-                    'bg-foreground text-background hover:bg-foreground/90',
-                    'disabled:pointer-events-none disabled:opacity-40'
-                  )}
-                >
-                  释放
-                </button>
-              </div>
-            </Row>
-          </div>
+          <Section icon={Plug} label="端口工具">
+            <div className="p-3">
+              <PortTool />
+            </div>
+          </Section>
 
-          {/* 关于 */}
-          <div className="pt-2">
-            <SectionTitle>关于</SectionTitle>
-            <div className="space-y-1 py-1 font-mono text-[11px] text-muted-foreground">
-              <div className="text-foreground">DevDock 0.1.0</div>
+          <Section icon={Info} label="关于">
+            <div className="space-y-1 px-3 py-3 font-mono text-[11px] text-muted-foreground">
+              <div className="text-[12px] font-semibold text-foreground">DevDock 0.1.0</div>
               <div>
                 Electron {versions.electron} · Node {versions.node} · Chromium {versions.chrome}
               </div>
             </div>
-          </div>
+          </Section>
         </div>
       </DialogContent>
     </Dialog>

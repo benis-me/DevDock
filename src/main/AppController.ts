@@ -54,6 +54,10 @@ export class AppController extends EventEmitter {
     return this.ports.killPort(port)
   }
 
+  killPid(pid: number): Promise<boolean> {
+    return this.ports.killPid(pid)
+  }
+
   // ---- settings ----
   getSettings(): Settings {
     return this.config.settings

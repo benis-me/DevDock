@@ -4,6 +4,7 @@ import type { PortProcess } from '@shared/types'
 export type Runner = (cmd: string, args: string[]) => Promise<string>
 export type Killer = (pid: number, signal: NodeJS.Signals) => void
 export type Sleeper = (ms: number) => Promise<void>
+export type AliveCheck = (pid: number) => boolean
 
 const defaultRunner: Runner = (cmd, args) =>
   new Promise((resolve) => {
@@ -19,6 +20,16 @@ const defaultKiller: Killer = (pid, signal) => {
 }
 
 const defaultSleeper: Sleeper = (ms) => new Promise((r) => setTimeout(r, ms))
+
+// signal 0 不发送信号，仅用于探测进程是否存在
+const defaultAlive: AliveCheck = (pid) => {
+  try {
+    process.kill(pid, 0)
+    return true
+  } catch (e) {
+    return (e as NodeJS.ErrnoException).code === 'EPERM' // 存在但无权限
+  }
+}
 
 // 解析 `lsof -nP -iTCP:<port> -sTCP:LISTEN` 输出，按 pid 去重
 export function parseLsof(output: string): PortProcess[] {
@@ -39,7 +50,8 @@ export class PortService {
   constructor(
     private readonly run: Runner = defaultRunner,
     private readonly kill: Killer = defaultKiller,
-    private readonly sleep: Sleeper = defaultSleeper
+    private readonly sleep: Sleeper = defaultSleeper,
+    private readonly alive: AliveCheck = defaultAlive
   ) {}
 
   // 谁在监听这个端口
@@ -60,5 +72,17 @@ export class PortService {
     for (const pid of survivors) this.kill(pid, 'SIGKILL')
     if (survivors.length) await this.sleep(200)
     return pids
+  }
+
+  // 终止单个进程：先 SIGTERM，仍存活再 SIGKILL，返回是否已不存在
+  async killPid(pid: number): Promise<boolean> {
+    if (!Number.isInteger(pid) || pid <= 0) return false
+    this.kill(pid, 'SIGTERM')
+    await this.sleep(400)
+    if (this.alive(pid)) {
+      this.kill(pid, 'SIGKILL')
+      await this.sleep(150)
+    }
+    return !this.alive(pid)
   }
 }

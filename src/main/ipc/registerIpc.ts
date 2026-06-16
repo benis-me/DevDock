@@ -64,6 +64,7 @@ export function registerIpc(controller: AppController, getWindow: () => BrowserW
 
   ipcMain.handle(IPC.PortsWho, (_e, port: number) => controller.whoListens(port))
   ipcMain.handle(IPC.PortsKill, (_e, port: number) => controller.killPort(port))
+  ipcMain.handle(IPC.PortsKillPid, (_e, pid: number) => controller.killPid(pid))
 
   ipcMain.handle(IPC.SettingsGet, () => controller.getSettings())
   ipcMain.handle(IPC.SettingsSet, (_e, partial) => controller.setSettings(partial))

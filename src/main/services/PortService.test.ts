@@ -72,4 +72,33 @@ describe('PortService', () => {
     expect(await svc.killPort(5173)).toEqual([])
     expect(kill).not.toHaveBeenCalled()
   })
+
+  it('killPid SIGTERMs a process that dies cleanly', async () => {
+    const kill = vi.fn()
+    const alive = vi.fn().mockReturnValue(false) // 已经死了
+    const svc = new PortService(vi.fn(), kill, noSleep, alive)
+    expect(await svc.killPid(12345)).toBe(true)
+    expect(kill).toHaveBeenCalledWith(12345, 'SIGTERM')
+    expect(kill).not.toHaveBeenCalledWith(12345, 'SIGKILL')
+  })
+
+  it('killPid escalates to SIGKILL for a survivor', async () => {
+    const kill = vi.fn()
+    const alive = vi
+      .fn()
+      .mockReturnValueOnce(true) // SIGTERM 后仍存活
+      .mockReturnValueOnce(false) // SIGKILL 后消失
+    const svc = new PortService(vi.fn(), kill, noSleep, alive)
+    expect(await svc.killPid(12345)).toBe(true)
+    expect(kill).toHaveBeenCalledWith(12345, 'SIGTERM')
+    expect(kill).toHaveBeenCalledWith(12345, 'SIGKILL')
+  })
+
+  it('killPid rejects invalid pids', async () => {
+    const kill = vi.fn()
+    const svc = new PortService(vi.fn(), kill, noSleep, () => false)
+    expect(await svc.killPid(0)).toBe(false)
+    expect(await svc.killPid(-1)).toBe(false)
+    expect(kill).not.toHaveBeenCalled()
+  })
 })

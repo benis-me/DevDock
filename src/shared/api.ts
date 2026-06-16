@@ -48,6 +48,7 @@ export interface DevDockApi {
   ports: {
     who(port: number): Promise<PortProcess[]>
     kill(port: number): Promise<number[]>
+    killPid(pid: number): Promise<boolean>
   }
   settings: {
     get(): Promise<Settings>

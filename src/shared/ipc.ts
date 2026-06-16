@@ -26,6 +26,7 @@ export const IPC = {
   AppsOpenWith: 'apps:openWith',
   PortsWho: 'ports:who',
   PortsKill: 'ports:kill',
+  PortsKillPid: 'ports:killPid',
   SettingsGet: 'settings:get',
   SettingsSet: 'settings:set',
   DialogPickDirectory: 'dialog:pickDirectory',
