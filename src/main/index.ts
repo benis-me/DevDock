@@ -2,10 +2,22 @@ import { app, BrowserWindow, nativeTheme } from 'electron'
 import { join } from 'path'
 import { AppController } from './AppController'
 import { FileWatcher } from './services/FileWatcher'
+import { TrayController } from './services/TrayController'
 import { registerIpc } from './ipc/registerIpc'
 
 let mainWindow: BrowserWindow | null = null
 let controller: AppController
+let tray: TrayController | null = null
+
+function showMainWindow(): void {
+  if (!mainWindow) {
+    createWindow()
+    return
+  }
+  if (mainWindow.isMinimized()) mainWindow.restore()
+  mainWindow.show()
+  mainWindow.focus()
+}
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -40,6 +52,8 @@ app.whenReady().then(() => {
   controller.startWatchingAll()
   registerIpc(controller, () => mainWindow)
   createWindow()
+  tray = new TrayController(controller, showMainWindow)
+  tray.init()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
@@ -74,3 +88,5 @@ app.on('before-quit', (e) => {
     controller?.shutdown()
   }
 })
+
+app.on('will-quit', () => tray?.destroy())
