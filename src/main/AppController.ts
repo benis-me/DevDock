@@ -4,7 +4,8 @@ import { basename, join } from 'path'
 import { randomUUID } from 'crypto'
 import { execSync } from 'child_process'
 import { parse as parseDotenv } from 'dotenv'
-import type { Config, Project, ScriptDef, ScriptPrefs, SessionState } from '@shared/types'
+import type { Config, Project, ScriptDef, ScriptPrefs, SessionState, Settings } from '@shared/types'
+import { DEFAULT_SETTINGS } from '@shared/types'
 import { sessionKey, runCommand } from '@shared/util'
 
 function slugify(s: string): string {
@@ -15,6 +16,7 @@ function slugify(s: string): string {
 }
 import { ProjectStore } from './services/ProjectStore'
 import { ProcessManager } from './services/ProcessManager'
+import { PortService } from './services/PortService'
 import { scanProject } from './services/Scanner'
 import { diffScripts, type ScriptDiff } from './services/scriptDiff'
 import type { IFileWatcher } from './services/FileWatcher'
@@ -24,6 +26,7 @@ export class AppController extends EventEmitter {
   private config: Config
   private portlessOk = false
   readonly pm = new ProcessManager()
+  private readonly ports = new PortService()
 
   constructor(
     configPath: string,
@@ -33,10 +36,33 @@ export class AppController extends EventEmitter {
     this.store = new ProjectStore(configPath)
     this.config = this.store.load()
     if (!this.config.scriptPrefs) this.config.scriptPrefs = {}
+    // 旧配置可能没有 settings，或缺少新增字段 —— 合并默认值
+    this.config.settings = { ...DEFAULT_SETTINGS, ...this.config.settings }
     // 转发进程事件
     this.pm.on('data', (key, chunk) => this.emit('terminal:data', key, chunk))
     this.pm.on('status', (s: SessionState) => this.emit('session:status', s))
     this.pm.on('url', (key, url) => this.emit('session:url', key, url))
+    this.pm.on('port:conflict', (key, port) => this.emit('port:conflict', key, port))
+  }
+
+  // ---- ports ----
+  whoListens(port: number): Promise<import('@shared/types').PortProcess[]> {
+    return this.ports.whoListens(port)
+  }
+
+  killPort(port: number): Promise<number[]> {
+    return this.ports.killPort(port)
+  }
+
+  // ---- settings ----
+  getSettings(): Settings {
+    return this.config.settings
+  }
+
+  setSettings(partial: Partial<Settings>): Settings {
+    this.config.settings = { ...this.config.settings, ...partial }
+    this.persist()
+    return this.config.settings
   }
 
   private persist(): void {
@@ -180,9 +206,11 @@ export class AppController extends EventEmitter {
     if (!found) return
     const { project, def } = found
     const base = def.runCmd ?? runCommand(project.packageManager, def.name)
-    // 未安装 portless 时降级为普通启动
-    const usePortless =
-      this.portlessOk && this.config.scriptPrefs[sessionKey(projectId, scriptId)]?.portless === true
+    // 逐脚本设置优先；未设置时长任务回落到全局 portlessDefault。未安装 portless 时降级。
+    const pref = this.config.scriptPrefs[sessionKey(projectId, scriptId)]?.portless
+    const wantPortless =
+      pref ?? (def.kind === 'long-running' && this.config.settings.portlessDefault)
+    const usePortless = this.portlessOk && wantPortless
 
     let command = base
     let url: string | undefined
@@ -196,7 +224,7 @@ export class AppController extends EventEmitter {
       scriptId: sessionKey(projectId, scriptId),
       command,
       cwd: def.cwd,
-      env: this.loadRunEnv(project.path, def.cwd),
+      env: this.config.settings.injectEnv ? this.loadRunEnv(project.path, def.cwd) : {},
       url
     })
   }

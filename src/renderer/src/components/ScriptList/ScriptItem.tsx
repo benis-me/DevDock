@@ -2,6 +2,7 @@ import type { JSX } from 'react'
 import { useAppStore } from '@/store/useAppStore'
 import { cn } from '@/lib/utils'
 import { sessionKey } from '@shared/util'
+import { portFromUrl } from '@shared/port'
 import type { ScriptDef, SessionStatus } from '@shared/types'
 import { useElapsed } from './useElapsed'
 import { Play, Square, RotateCw, ArrowUpRight } from 'lucide-react'
@@ -52,13 +53,16 @@ export function ScriptItem({ projectId, def }: { projectId: string; def: ScriptD
   const startScript = useAppStore((s) => s.startScript)
   const stopScript = useAppStore((s) => s.stopScript)
   const restartScript = useAppStore((s) => s.restartScript)
-  const portless = useAppStore((s) => s.scriptPrefs[key]?.portless === true)
+  const explicitPortless = useAppStore((s) => s.scriptPrefs[key]?.portless)
+  const portlessDefault = useAppStore((s) => s.settings.portlessDefault)
+  const portless = explicitPortless ?? (portlessDefault && def.kind === 'long-running')
   const portlessAvailable = useAppStore((s) => s.portlessAvailable)
   const setPortless = useAppStore((s) => s.setPortless)
 
   const status: SessionStatus | 'idle' = session?.status ?? 'idle'
   const isActive = status === 'running' || status === 'starting'
   const elapsed = useElapsed(session?.startedAt, isActive)
+  const port = portFromUrl(session?.url)
 
   return (
     <div
@@ -84,6 +88,14 @@ export function ScriptItem({ projectId, def }: { projectId: string; def: ScriptD
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <span className="truncate text-[13px] font-medium text-foreground">{def.name}</span>
+            {isActive && port && (
+              <span
+                title={`监听端口 ${port}`}
+                className="shrink-0 rounded bg-run/15 px-1 font-mono text-[10px] font-medium text-run"
+              >
+                :{port}
+              </span>
+            )}
             {isActive && session && (
               <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
                 {session.pid > 0 ? `PID ${session.pid} · ` : ''}

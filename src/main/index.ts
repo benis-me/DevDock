@@ -55,7 +55,7 @@ app.on('before-quit', (e) => {
   const running = controller
     ?.listSessions()
     .filter((s) => s.status === 'running' || s.status === 'starting')
-  if (running && running.length > 0) {
+  if (running && running.length > 0 && controller.getSettings().confirmOnQuit) {
     e.preventDefault()
     const { dialog } = require('electron')
     const choice = dialog.showMessageBoxSync(mainWindow!, {

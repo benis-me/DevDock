@@ -1,4 +1,12 @@
-import type { AppInfo, Project, ScriptPrefs, SessionState, UiState } from './types'
+import type {
+  AppInfo,
+  PortProcess,
+  Project,
+  ScriptPrefs,
+  SessionState,
+  Settings,
+  UiState
+} from './types'
 
 export interface DevDockApi {
   projects: {
@@ -37,11 +45,20 @@ export interface DevDockApi {
     list(): Promise<AppInfo[]>
     openWith(appId: string, path: string): Promise<void>
   }
+  ports: {
+    who(port: number): Promise<PortProcess[]>
+    kill(port: number): Promise<number[]>
+  }
+  settings: {
+    get(): Promise<Settings>
+    set(partial: Partial<Settings>): Promise<Settings>
+  }
   ui: {
     getState(): Promise<UiState>
     setState(partial: Partial<UiState>): Promise<void>
   }
   sessions: { list(): Promise<SessionState[]> }
+  versions: { electron: string; node: string; chrome: string }
   getPathForFile(file: File): string
   onTerminalData(cb: (sessionKey: string, chunk: string) => void): () => void
   onSessionStatus(cb: (state: SessionState) => void): () => void
@@ -49,6 +66,7 @@ export interface DevDockApi {
   onProjectUpdated(cb: (project: Project) => void): () => void
   onScriptChanged(cb: (sessionKey: string) => void): () => void
   onEnvChanged(cb: (path: string) => void): () => void
+  onPortConflict(cb: (sessionKey: string, port: number) => void): () => void
 }
 
 declare global {

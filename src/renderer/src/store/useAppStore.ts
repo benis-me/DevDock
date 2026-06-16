@@ -1,5 +1,13 @@
 import { create } from 'zustand'
-import type { AppInfo, Project, ScriptPrefs, SessionState, ThemeMode } from '@shared/types'
+import type {
+  AppInfo,
+  Project,
+  ScriptPrefs,
+  SessionState,
+  Settings,
+  ThemeMode
+} from '@shared/types'
+import { DEFAULT_SETTINGS } from '@shared/types'
 import { sessionKey } from '@shared/util'
 
 interface AppState {
@@ -15,6 +23,7 @@ interface AppState {
   apps: AppInfo[]
   openWithDefault?: string
   theme: ThemeMode
+  settings: Settings
 
   init(): Promise<void>
   selectProject(id: string): void
@@ -35,6 +44,9 @@ interface AppState {
   openEnvFile(path: string): void
   closeEnv(path: string): void
   setPortless(projectId: string, scriptId: string, enabled: boolean): Promise<void>
+  killPort(port: number): Promise<number[]>
+  freePortAndRestart(projectId: string, scriptId: string, port: number): Promise<void>
+  setSettings(partial: Partial<Settings>): Promise<void>
   setTheme(theme: ThemeMode): Promise<void>
   applyThemeClass(): void
 
@@ -52,16 +64,19 @@ export const useAppStore = create<AppState>((set, get) => ({
   portlessAvailable: false,
   apps: [],
   theme: 'system',
+  settings: { ...DEFAULT_SETTINGS },
 
   async init() {
-    const [projects, ui, sessions, scriptPrefs, portlessAvailable, apps] = await Promise.all([
-      window.devdock.projects.list(),
-      window.devdock.ui.getState(),
-      window.devdock.sessions.list(),
-      window.devdock.scripts.prefs(),
-      window.devdock.scripts.portlessAvailable(),
-      window.devdock.apps.list()
-    ])
+    const [projects, ui, sessions, scriptPrefs, portlessAvailable, apps, settings] =
+      await Promise.all([
+        window.devdock.projects.list(),
+        window.devdock.ui.getState(),
+        window.devdock.sessions.list(),
+        window.devdock.scripts.prefs(),
+        window.devdock.scripts.portlessAvailable(),
+        window.devdock.apps.list(),
+        window.devdock.settings.get()
+      ])
     const sessMap: Record<string, SessionState> = {}
     for (const s of sessions) sessMap[s.scriptId] = s
     set({
@@ -70,6 +85,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       scriptPrefs,
       portlessAvailable,
       apps,
+      settings,
       openWithDefault: ui.openWithDefault,
       theme: ui.theme,
       selectedProjectId: ui.selectedProjectId ?? projects[0]?.id,
@@ -95,9 +111,26 @@ export const useAppStore = create<AppState>((set, get) => ({
       })
     })
 
+    // 端口冲突最近告警过的会话 key —— 避免再叠加一条通用"运行出错"
+    const conflicted = new Set<string>()
+    window.devdock.onPortConflict((key, port) => {
+      conflicted.add(key)
+      setTimeout(() => conflicted.delete(key), 4000)
+      const [projectId, scriptId] = key.split('::')
+      import('sonner').then(({ toast }) =>
+        toast.error(`端口 ${port} 被占用`, {
+          description: scriptId,
+          action: {
+            label: '释放并重启',
+            onClick: () => get().freePortAndRestart(projectId, scriptId, port)
+          }
+        })
+      )
+    })
+
     window.devdock.onSessionStatus((s) => {
       get().applyStatus(s)
-      if (s.status === 'errored') {
+      if (s.status === 'errored' && !conflicted.has(s.scriptId)) {
         import('sonner').then(({ toast }) =>
           toast.error('脚本运行出错', { description: s.scriptId.split('::')[1] })
         )
@@ -266,6 +299,21 @@ export const useAppStore = create<AppState>((set, get) => ({
       scriptPrefs: { ...st.scriptPrefs, [key]: { ...st.scriptPrefs[key], portless: enabled } }
     }))
     await window.devdock.scripts.setPortless(projectId, scriptId, enabled)
+  },
+
+  async killPort(port) {
+    return window.devdock.ports.kill(port)
+  },
+
+  async freePortAndRestart(projectId, scriptId, port) {
+    await window.devdock.ports.kill(port)
+    await get().restartScript(projectId, scriptId)
+  },
+
+  async setSettings(partial) {
+    set((st) => ({ settings: { ...st.settings, ...partial } }))
+    const next = await window.devdock.settings.set(partial)
+    set({ settings: next })
   },
 
   closeTab(key) {

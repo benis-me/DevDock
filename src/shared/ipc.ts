@@ -24,6 +24,10 @@ export const IPC = {
   EnvWrite: 'env:write',
   AppsList: 'apps:list',
   AppsOpenWith: 'apps:openWith',
+  PortsWho: 'ports:who',
+  PortsKill: 'ports:kill',
+  SettingsGet: 'settings:get',
+  SettingsSet: 'settings:set',
   DialogPickDirectory: 'dialog:pickDirectory',
   UiGetState: 'ui:getState',
   UiSetState: 'ui:setState',
@@ -34,5 +38,6 @@ export const IPC = {
   EvtSessionUrl: 'evt:session:url',
   EvtProjectUpdated: 'evt:project:updated',
   EvtScriptChanged: 'evt:script:changed',
-  EvtEnvChanged: 'evt:env:changed'
+  EvtEnvChanged: 'evt:env:changed',
+  EvtPortConflict: 'evt:port:conflict'
 } as const

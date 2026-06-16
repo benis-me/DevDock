@@ -45,18 +45,32 @@ const api: DevDockApi = {
     list: () => ipcRenderer.invoke(IPC.AppsList),
     openWith: (appId, p) => ipcRenderer.invoke(IPC.AppsOpenWith, appId, p)
   },
+  ports: {
+    who: (port) => ipcRenderer.invoke(IPC.PortsWho, port),
+    kill: (port) => ipcRenderer.invoke(IPC.PortsKill, port)
+  },
+  settings: {
+    get: () => ipcRenderer.invoke(IPC.SettingsGet),
+    set: (partial) => ipcRenderer.invoke(IPC.SettingsSet, partial)
+  },
   ui: {
     getState: () => ipcRenderer.invoke(IPC.UiGetState),
     setState: (partial) => ipcRenderer.invoke(IPC.UiSetState, partial)
   },
   sessions: { list: () => ipcRenderer.invoke(IPC.SessionsList) },
+  versions: {
+    electron: process.versions.electron ?? '',
+    node: process.versions.node ?? '',
+    chrome: process.versions.chrome ?? ''
+  },
   getPathForFile: (file) => webUtils.getPathForFile(file),
   onTerminalData: (cb) => sub(IPC.EvtTerminalData, cb),
   onSessionStatus: (cb) => sub(IPC.EvtSessionStatus, cb),
   onSessionUrl: (cb) => sub(IPC.EvtSessionUrl, cb),
   onProjectUpdated: (cb) => sub(IPC.EvtProjectUpdated, cb),
   onScriptChanged: (cb) => sub(IPC.EvtScriptChanged, cb),
-  onEnvChanged: (cb) => sub(IPC.EvtEnvChanged, cb)
+  onEnvChanged: (cb) => sub(IPC.EvtEnvChanged, cb),
+  onPortConflict: (cb) => sub(IPC.EvtPortConflict, cb)
 }
 
 contextBridge.exposeInMainWorld('devdock', api)

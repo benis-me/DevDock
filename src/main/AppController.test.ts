@@ -63,4 +63,43 @@ describe('AppController', () => {
     const { project } = c.rescanProject(p.id)
     expect(project!.missing).toBe(true)
   })
+
+  it('returns default settings for a fresh config', () => {
+    const c = new AppController(configFile, fakeWatcher())
+    const s = c.getSettings()
+    expect(s.terminalFontSize).toBe(12)
+    expect(s.injectEnv).toBe(true)
+    expect(s.confirmOnQuit).toBe(true)
+    expect(s.portlessDefault).toBe(false)
+  })
+
+  it('merges and persists settings across instances', () => {
+    const c1 = new AppController(configFile, fakeWatcher())
+    const next = c1.setSettings({ terminalFontSize: 16, confirmOnQuit: false })
+    expect(next.terminalFontSize).toBe(16)
+    // 未涉及的字段保持默认
+    expect(next.injectEnv).toBe(true)
+    const c2 = new AppController(configFile, fakeWatcher())
+    expect(c2.getSettings().terminalFontSize).toBe(16)
+    expect(c2.getSettings().confirmOnQuit).toBe(false)
+  })
+
+  it('back-fills missing settings on legacy configs', () => {
+    // 旧版本写入的、没有 settings / 缺字段的配置
+    writeFileSync(
+      configFile,
+      JSON.stringify({
+        version: 1,
+        projects: [],
+        ui: { theme: 'system' },
+        scriptPrefs: {},
+        settings: { terminalFontSize: 14 }
+      })
+    )
+    const c = new AppController(configFile, fakeWatcher())
+    const s = c.getSettings()
+    expect(s.terminalFontSize).toBe(14) // 保留已有
+    expect(s.injectEnv).toBe(true) // 回填默认
+    expect(s.terminalCursorBlink).toBe(true)
+  })
 })

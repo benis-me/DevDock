@@ -45,6 +45,11 @@ export interface AppInfo {
   icon: string // data URL (PNG) of the app icon
 }
 
+export interface PortProcess {
+  pid: number
+  command: string
+}
+
 export interface UiState {
   theme: ThemeMode
   selectedProjectId?: string
@@ -61,11 +66,28 @@ export interface ScriptPrefs {
   portless?: boolean
 }
 
+export interface Settings {
+  terminalFontSize: number // px
+  terminalCursorBlink: boolean
+  portlessDefault: boolean // 长任务默认用 portless 启动（无逐脚本设置时）
+  injectEnv: boolean // 启动脚本时注入项目 .env / .env.local
+  confirmOnQuit: boolean // 退出时若有运行中脚本则二次确认
+}
+
+export const DEFAULT_SETTINGS: Settings = {
+  terminalFontSize: 12,
+  terminalCursorBlink: true,
+  portlessDefault: false,
+  injectEnv: true,
+  confirmOnQuit: true
+}
+
 export interface Config {
   version: number
   projects: Project[]
   ui: UiState
   scriptPrefs: Record<string, ScriptPrefs> // key: `${projectId}::${scriptId}`
+  settings: Settings
 }
 
 export interface SessionState {
@@ -83,5 +105,6 @@ export const DEFAULT_CONFIG: Config = {
   version: CONFIG_VERSION,
   projects: [],
   ui: { theme: 'system' },
-  scriptPrefs: {}
+  scriptPrefs: {},
+  settings: { ...DEFAULT_SETTINGS }
 }

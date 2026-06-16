@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useAppStore } from '@/store/useAppStore'
 import { ProjectRow } from './ProjectRow'
 import { ThemeToggle } from '@/components/ThemeToggle'
+import { SettingsDialog } from '@/components/Settings/SettingsDialog'
 import { Hint } from '@/components/ui/hint'
 import { cn } from '@/lib/utils'
 import { Plus, FolderPlus, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
@@ -74,6 +75,7 @@ export function Sidebar({
         </div>
         <div className="flex w-full flex-col items-center gap-1 border-t border-border py-2">
           <ThemeToggle collapsed />
+          <SettingsDialog />
           <Hint label="展开侧栏" side="right">
             <button
               onClick={onToggle}
@@ -166,7 +168,7 @@ export function Sidebar({
 
       <div className="flex items-center justify-between border-t border-border px-3 py-2">
         <ThemeToggle />
-        <span className="font-mono text-[10px] text-muted-foreground/60">v0.1.0</span>
+        <SettingsDialog />
       </div>
     </aside>
   )

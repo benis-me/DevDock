@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react'
 import { Terminal, type ITheme } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import { WebLinksAddon } from '@xterm/addon-web-links'
+import { useAppStore } from '@/store/useAppStore'
 import '@xterm/xterm/css/xterm.css'
 
 export const TERMINAL_BG = '#0c0f16'
@@ -41,16 +42,19 @@ export function TerminalView({
   const ref = useRef<HTMLDivElement>(null)
   const termRef = useRef<Terminal | null>(null)
   const fitRef = useRef<FitAddon | null>(null)
+  const fontSize = useAppStore((s) => s.settings.terminalFontSize)
+  const cursorBlink = useAppStore((s) => s.settings.terminalCursorBlink)
 
   useEffect(() => {
     let disposed = false
+    const s = useAppStore.getState().settings
 
     const term = new Terminal({
       fontFamily:
         '"JetBrains Mono Variable", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
-      fontSize: 12,
+      fontSize: s.terminalFontSize,
       lineHeight: 1.35,
-      cursorBlink: true,
+      cursorBlink: s.terminalCursorBlink,
       scrollback: 5000,
       theme: TERMINAL_THEME
     })
@@ -94,6 +98,22 @@ export function TerminalView({
   useEffect(() => {
     if (visible) setTimeout(() => fitRef.current?.fit(), 0)
   }, [visible])
+
+  // 设置项变化时即时应用到已存在的终端
+  useEffect(() => {
+    const term = termRef.current
+    if (!term) return
+    term.options.fontSize = fontSize
+    term.options.cursorBlink = cursorBlink
+    setTimeout(() => {
+      try {
+        fitRef.current?.fit()
+        window.devdock.terminal.resize(sessionKey, term.cols, term.rows)
+      } catch {
+        /* 元素尚不可见 */
+      }
+    }, 0)
+  }, [fontSize, cursorBlink, sessionKey])
 
   return (
     <div

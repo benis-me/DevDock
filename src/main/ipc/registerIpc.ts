@@ -14,6 +14,7 @@ export function registerIpc(controller: AppController, getWindow: () => BrowserW
   controller.on('project:updated', (p) => send(IPC.EvtProjectUpdated, p))
   controller.on('script:changed', (key) => send(IPC.EvtScriptChanged, key))
   controller.on('env:changed', (p) => send(IPC.EvtEnvChanged, p))
+  controller.on('port:conflict', (key, port) => send(IPC.EvtPortConflict, key, port))
 
   ipcMain.handle(IPC.ProjectsList, () => controller.listProjects())
   ipcMain.handle(IPC.ProjectsAdd, async () => {
@@ -60,6 +61,12 @@ export function registerIpc(controller: AppController, getWindow: () => BrowserW
 
   ipcMain.handle(IPC.AppsList, () => detectApps())
   ipcMain.handle(IPC.AppsOpenWith, (_e, appId: string, folder: string) => openWith(appId, folder))
+
+  ipcMain.handle(IPC.PortsWho, (_e, port: number) => controller.whoListens(port))
+  ipcMain.handle(IPC.PortsKill, (_e, port: number) => controller.killPort(port))
+
+  ipcMain.handle(IPC.SettingsGet, () => controller.getSettings())
+  ipcMain.handle(IPC.SettingsSet, (_e, partial) => controller.setSettings(partial))
 
   ipcMain.handle(IPC.UiGetState, () => controller.getUiState())
   ipcMain.handle(IPC.UiSetState, (_e, partial) => {

@@ -1,6 +1,7 @@
 import { EventEmitter } from 'events'
 import type { SessionState, SessionStatus } from '@shared/types'
-import { detectUrl } from './UrlDetector'
+import { detectUrl, stripAnsi } from './UrlDetector'
+import { detectPortConflict } from '@shared/port'
 import { realPtySpawner, type IPty, type PtySpawner } from './ptySpawner'
 
 interface Session {
@@ -11,6 +12,7 @@ interface Session {
   cwd: string
   stopRequested: boolean
   killTimer?: NodeJS.Timeout
+  conflictPort?: number // 已就该端口冲突告警过，避免重复
 }
 
 const BUFFER_LIMIT = 200_000
@@ -97,6 +99,11 @@ export class ProcessManager extends EventEmitter {
           session.state.url = url
           this.emit('url', opts.scriptId, url)
         }
+      }
+      const port = detectPortConflict(stripAnsi(data))
+      if (port && session.conflictPort !== port) {
+        session.conflictPort = port
+        this.emit('port:conflict', opts.scriptId, port)
       }
     })
 
