@@ -32,6 +32,7 @@ export interface DevDockApi {
     write(sessionKey: string, data: string): Promise<void>
     resize(sessionKey: string, cols: number, rows: number): Promise<void>
     getBuffer(sessionKey: string): Promise<string>
+    clear(sessionKey: string): Promise<void>
   }
   shell: {
     openExternal(url: string): Promise<void>

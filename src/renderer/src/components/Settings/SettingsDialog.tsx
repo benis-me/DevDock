@@ -172,6 +172,13 @@ function SectionBody({ id }: { id: SectionId }): JSX.Element {
               onCheckedChange={(v) => setSettings({ confirmOnQuit: v })}
             />
           </Row>
+          <Row title="完成时通知" desc="窗口未聚焦时，脚本异常退出 / 任务完成发系统通知">
+            <Switch
+              label="完成时通知"
+              checked={settings.notifyOnFinish}
+              onCheckedChange={(v) => setSettings({ notifyOnFinish: v })}
+            />
+          </Row>
         </Card>
       )
     case 'ports':

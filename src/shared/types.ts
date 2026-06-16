@@ -72,6 +72,7 @@ export interface Settings {
   portlessDefault: boolean // 长任务默认用 portless 启动（无逐脚本设置时）
   injectEnv: boolean // 启动脚本时注入项目 .env / .env.local
   confirmOnQuit: boolean // 退出时若有运行中脚本则二次确认
+  notifyOnFinish: boolean // 脚本异常退出/一次性任务完成时发系统通知（窗口未聚焦时）
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -79,7 +80,8 @@ export const DEFAULT_SETTINGS: Settings = {
   terminalCursorBlink: true,
   portlessDefault: false,
   injectEnv: true,
-  confirmOnQuit: true
+  confirmOnQuit: true,
+  notifyOnFinish: true
 }
 
 export interface Config {

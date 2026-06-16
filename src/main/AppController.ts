@@ -312,6 +312,9 @@ export class AppController extends EventEmitter {
   getBuffer(key: string): string {
     return this.pm.getBuffer(key)
   }
+  clearBuffer(key: string): void {
+    this.pm.clearBuffer(key)
+  }
 
   // ---- ui ----
   getUiState(): Config['ui'] {

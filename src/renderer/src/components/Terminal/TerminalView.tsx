@@ -1,8 +1,10 @@
-import type { JSX } from 'react'
-import { useEffect, useRef } from 'react'
+import type { JSX, ReactNode } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Terminal, type ITheme } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import { WebLinksAddon } from '@xterm/addon-web-links'
+import { SearchAddon } from '@xterm/addon-search'
+import { Search, Copy, Trash2, ArrowDown, X, ChevronUp, ChevronDown } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 import '@xterm/xterm/css/xterm.css'
 
@@ -57,6 +59,27 @@ const TERMINAL_THEME_LIGHT: ITheme = {
 
 const termTheme = (isDark: boolean): ITheme => (isDark ? TERMINAL_THEME_DARK : TERMINAL_THEME_LIGHT)
 
+function ToolBtn({
+  title,
+  onClick,
+  children
+}: {
+  title: string
+  onClick: () => void
+  children: ReactNode
+}): JSX.Element {
+  return (
+    <button
+      title={title}
+      aria-label={title}
+      onClick={onClick}
+      className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+    >
+      {children}
+    </button>
+  )
+}
+
 export function TerminalView({
   sessionKey,
   visible
@@ -67,9 +90,14 @@ export function TerminalView({
   const ref = useRef<HTMLDivElement>(null)
   const termRef = useRef<Terminal | null>(null)
   const fitRef = useRef<FitAddon | null>(null)
+  const searchRef = useRef<SearchAddon | null>(null)
+  const searchInputRef = useRef<HTMLInputElement>(null)
   const fontSize = useAppStore((s) => s.settings.terminalFontSize)
   const cursorBlink = useAppStore((s) => s.settings.terminalCursorBlink)
   const isDark = useAppStore((s) => s.isDark)
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [atBottom, setAtBottom] = useState(true)
 
   useEffect(() => {
     let disposed = false
@@ -85,20 +113,27 @@ export function TerminalView({
       theme: termTheme(useAppStore.getState().isDark)
     })
     const fit = new FitAddon()
+    const search = new SearchAddon()
     term.loadAddon(fit)
+    term.loadAddon(search)
     term.loadAddon(new WebLinksAddon((_e, uri) => window.devdock.shell.openExternal(uri)))
     term.open(ref.current!)
     termRef.current = term
     fitRef.current = fit
+    searchRef.current = search
+
+    const updateBottom = (): void =>
+      setAtBottom(term.buffer.active.viewportY >= term.buffer.active.baseY)
 
     window.devdock.terminal.getBuffer(sessionKey).then((buf) => {
-      if (!disposed && buf) term.write(buf)
+      if (!disposed && buf) term.write(buf, updateBottom)
     })
 
     const off = window.devdock.onTerminalData((key, chunk) => {
-      if (key === sessionKey) term.write(chunk)
+      if (key === sessionKey) term.write(chunk, updateBottom)
     })
     const onInput = term.onData((data) => window.devdock.terminal.write(sessionKey, data))
+    const onScroll = term.onScroll(updateBottom)
 
     const doFit = (): void => {
       try {
@@ -116,6 +151,7 @@ export function TerminalView({
       disposed = true
       off()
       onInput.dispose()
+      onScroll.dispose()
       ro.disconnect()
       term.dispose()
     }
@@ -147,12 +183,105 @@ export function TerminalView({
     }, 0)
   }, [fontSize, cursorBlink, sessionKey])
 
+  const findNext = (q = searchTerm): void => {
+    if (q) searchRef.current?.findNext(q)
+  }
+  const findPrev = (): void => {
+    if (searchTerm) searchRef.current?.findPrevious(searchTerm)
+  }
+  const closeSearch = (): void => {
+    setSearchOpen(false)
+    termRef.current?.clearSelection()
+    termRef.current?.focus()
+  }
+  const openSearch = (): void => {
+    setSearchOpen(true)
+    requestAnimationFrame(() => searchInputRef.current?.focus())
+  }
+  const copyAll = async (): Promise<void> => {
+    const term = termRef.current
+    if (!term) return
+    term.selectAll()
+    const text = term.getSelection()
+    term.clearSelection()
+    if (!text) return
+    await navigator.clipboard.writeText(text)
+    import('sonner').then(({ toast }) => toast.success('已复制终端内容'))
+  }
+  const clearTerm = (): void => {
+    termRef.current?.clear()
+    window.devdock.terminal.clear(sessionKey)
+  }
+
   return (
     <div
-      className="h-full w-full bg-[var(--term-bg)] p-2.5"
+      className="group relative h-full w-full bg-[var(--term-bg)] p-2.5"
       style={{ display: visible ? 'block' : 'none' }}
+      onKeyDownCapture={(e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'f') {
+          e.preventDefault()
+          e.stopPropagation()
+          openSearch()
+        }
+      }}
     >
       <div ref={ref} className="h-full w-full" />
+
+      {searchOpen ? (
+        <div className="absolute right-3 top-3 flex items-center gap-0.5 rounded-md border border-border bg-background/95 p-1 shadow-sm backdrop-blur-sm">
+          <input
+            ref={searchInputRef}
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value)
+              findNext(e.target.value)
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                e.shiftKey ? findPrev() : findNext()
+              } else if (e.key === 'Escape') {
+                e.preventDefault()
+                closeSearch()
+              }
+            }}
+            placeholder="搜索输出…"
+            className="h-6 w-40 bg-transparent px-1.5 text-[12px] text-foreground outline-none placeholder:text-muted-foreground"
+          />
+          <ToolBtn title="上一个 (⇧⏎)" onClick={findPrev}>
+            <ChevronUp className="h-3.5 w-3.5" />
+          </ToolBtn>
+          <ToolBtn title="下一个 (⏎)" onClick={() => findNext()}>
+            <ChevronDown className="h-3.5 w-3.5" />
+          </ToolBtn>
+          <ToolBtn title="关闭 (Esc)" onClick={closeSearch}>
+            <X className="h-3.5 w-3.5" />
+          </ToolBtn>
+        </div>
+      ) : (
+        <div className="absolute right-3 top-3 flex items-center gap-0.5 rounded-md border border-border bg-background/80 p-0.5 opacity-0 shadow-sm backdrop-blur-sm transition-opacity group-hover:opacity-100">
+          <ToolBtn title="搜索 (⌘F)" onClick={openSearch}>
+            <Search className="h-3.5 w-3.5" />
+          </ToolBtn>
+          <ToolBtn title="复制全部" onClick={copyAll}>
+            <Copy className="h-3.5 w-3.5" />
+          </ToolBtn>
+          <ToolBtn title="清屏" onClick={clearTerm}>
+            <Trash2 className="h-3.5 w-3.5" />
+          </ToolBtn>
+        </div>
+      )}
+
+      {!atBottom && (
+        <button
+          onClick={() => termRef.current?.scrollToBottom()}
+          title="跳到底部"
+          aria-label="跳到底部"
+          className="absolute bottom-3 right-3 flex h-7 w-7 items-center justify-center rounded-full border border-border bg-background/90 text-muted-foreground shadow-sm backdrop-blur-sm transition hover:text-foreground"
+        >
+          <ArrowDown className="h-4 w-4" />
+        </button>
+      )}
     </div>
   )
 }

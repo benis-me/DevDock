@@ -31,7 +31,8 @@ const api: DevDockApi = {
   terminal: {
     write: (key, data) => ipcRenderer.invoke(IPC.TerminalWrite, key, data),
     resize: (key, c, r) => ipcRenderer.invoke(IPC.TerminalResize, key, c, r),
-    getBuffer: (key) => ipcRenderer.invoke(IPC.TerminalGetBuffer, key)
+    getBuffer: (key) => ipcRenderer.invoke(IPC.TerminalGetBuffer, key),
+    clear: (key) => ipcRenderer.invoke(IPC.TerminalClear, key)
   },
   shell: {
     openExternal: (url) => ipcRenderer.invoke(IPC.ShellOpenExternal, url),

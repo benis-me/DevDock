@@ -3,6 +3,7 @@ import { join } from 'path'
 import { AppController } from './AppController'
 import { FileWatcher } from './services/FileWatcher'
 import { TrayController } from './services/TrayController'
+import { NotificationController } from './services/NotificationController'
 import { registerIpc } from './ipc/registerIpc'
 
 let mainWindow: BrowserWindow | null = null
@@ -54,6 +55,11 @@ app.whenReady().then(() => {
   createWindow()
   tray = new TrayController(controller, showMainWindow)
   tray.init()
+  new NotificationController(
+    controller,
+    () => mainWindow?.isFocused() ?? false,
+    showMainWindow
+  ).init()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })

@@ -158,6 +158,11 @@ export class ProcessManager extends EventEmitter {
     return this.sessions.get(scriptId)?.buffer ?? ''
   }
 
+  clearBuffer(scriptId: string): void {
+    const s = this.sessions.get(scriptId)
+    if (s) s.buffer = ''
+  }
+
   getState(scriptId: string): SessionState | undefined {
     const s = this.sessions.get(scriptId)
     return s ? { ...s.state } : undefined

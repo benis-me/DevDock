@@ -52,6 +52,7 @@ export function registerIpc(controller: AppController, getWindow: () => BrowserW
     controller.resizeTerminal(key, c, r)
   )
   ipcMain.handle(IPC.TerminalGetBuffer, (_e, key: string) => controller.getBuffer(key))
+  ipcMain.handle(IPC.TerminalClear, (_e, key: string) => controller.clearBuffer(key))
 
   ipcMain.handle(IPC.ShellOpenExternal, (_e, url: string) => shell.openExternal(url))
   ipcMain.handle(IPC.ShellOpenPath, (_e, p: string) => shell.openPath(p))

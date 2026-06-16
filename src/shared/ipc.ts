@@ -18,6 +18,7 @@ export const IPC = {
   TerminalWrite: 'terminal:write',
   TerminalResize: 'terminal:resize',
   TerminalGetBuffer: 'terminal:getBuffer',
+  TerminalClear: 'terminal:clear',
   ShellOpenExternal: 'shell:openExternal',
   ShellOpenPath: 'shell:openPath',
   EnvRead: 'env:read',
