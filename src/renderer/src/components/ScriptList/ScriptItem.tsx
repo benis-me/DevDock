@@ -64,7 +64,7 @@ export function ScriptItem({ projectId, def }: { projectId: string; def: ScriptD
     <div
       onClick={() => openTab(key)}
       className={cn(
-        'group relative cursor-pointer overflow-hidden rounded-md px-2.5 py-2 transition-colors',
+        'group relative cursor-pointer overflow-hidden rounded-md p-2.5 transition-colors',
         selected ? 'bg-accent' : 'hover:bg-accent/50'
       )}
     >

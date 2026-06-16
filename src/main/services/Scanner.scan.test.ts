@@ -54,4 +54,23 @@ describe('scanProject', () => {
     const root = r.workspaces.find((w) => w.relPath === '.')
     expect(root?.scripts.map((s) => s.name)).toContain('build:all')
   })
+
+  it('detects non-npm scripts (Makefile + Cargo) on the root workspace', () => {
+    writePkg('.', { name: 'app', scripts: { dev: 'vite' } })
+    writeFileSync(join(dir, 'Makefile'), '.PHONY: build\nbuild:\n\tgo build\ntest:\n\tgo test\n')
+    writeFileSync(join(dir, 'Cargo.toml'), '[package]\nname = "x"\n')
+    const r = scanProject(dir)
+    const root = r.workspaces.find((w) => w.relPath === '.')!
+    const ids = root.scripts.map((s) => s.id)
+    expect(ids).toContain('.#make:build')
+    expect(ids).toContain('.#cargo:run')
+    expect(root.scripts.find((s) => s.id === '.#cargo:run')?.runCmd).toBe('cargo run')
+  })
+
+  it('detects a project with no package.json (Makefile only)', () => {
+    writeFileSync(join(dir, 'Makefile'), 'deploy:\n\t./deploy.sh\n')
+    const r = scanProject(dir)
+    const root = r.workspaces.find((w) => w.relPath === '.')
+    expect(root?.scripts.map((s) => s.name)).toContain('deploy')
+  })
 })

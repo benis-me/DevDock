@@ -12,7 +12,7 @@ export function EnvItem({ file }: { file: EnvFile }): JSX.Element {
     <div
       onClick={() => openEnvFile(file.path)}
       className={cn(
-        'group relative flex cursor-pointer items-center gap-2.5 overflow-hidden rounded-md px-2.5 py-2 transition-colors',
+        'group relative flex cursor-pointer items-center gap-2.5 overflow-hidden rounded-md p-2.5 transition-colors',
         selected ? 'bg-accent' : 'hover:bg-accent/50'
       )}
     >

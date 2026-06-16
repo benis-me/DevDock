@@ -1,5 +1,5 @@
 import { existsSync, readFileSync, readdirSync, type Dirent } from 'fs'
-import { dirname, join, relative, sep } from 'path'
+import { basename, dirname, join, relative, sep } from 'path'
 import fg from 'fast-glob'
 import yaml from 'js-yaml'
 import type { EnvFile, PackageManager, ScriptDef, ScriptKind, WorkspacePkg } from '@shared/types'
@@ -106,6 +106,100 @@ function readWorkspacePatterns(root: string): string[] {
   return patterns
 }
 
+// 非 npm 的可运行脚本来源：Makefile / docker-compose / Procfile / Cargo / justfile / deno
+function detectExtraScripts(root: string): ScriptDef[] {
+  const out: ScriptDef[] = []
+  const add = (source: string, name: string, runCmd: string, kind?: ScriptKind): void => {
+    out.push({
+      id: `.#${source}:${name}`,
+      name,
+      command: runCmd,
+      kind: kind ?? classifyScript(name, runCmd),
+      cwd: root,
+      source,
+      runCmd
+    })
+  }
+  const read = (f: string): string | null => {
+    try {
+      return readFileSync(join(root, f), 'utf8')
+    } catch {
+      return null
+    }
+  }
+  const firstExisting = (names: string[]): string | null =>
+    names.find((f) => existsSync(join(root, f))) ?? null
+
+  // Makefile targets
+  const mk = firstExisting(['Makefile', 'makefile', 'GNUmakefile'])
+  if (mk) {
+    const text = read(mk) ?? ''
+    const targets = new Set<string>()
+    for (const line of text.split(/\r?\n/)) {
+      const m = line.match(/^([A-Za-z0-9][\w.-]*)\s*:(?!=)/)
+      if (m && !m[1].startsWith('.')) targets.add(m[1])
+    }
+    for (const t of [...targets].slice(0, 50)) add('make', t, `make ${t}`)
+  }
+
+  // docker compose services
+  const compose = firstExisting([
+    'compose.yaml',
+    'compose.yml',
+    'docker-compose.yml',
+    'docker-compose.yaml'
+  ])
+  if (compose) {
+    try {
+      const doc = yaml.load(read(compose) ?? '') as { services?: Record<string, unknown> }
+      for (const svc of Object.keys(doc?.services ?? {}))
+        add('compose', svc, `docker compose up ${svc}`, 'long-running')
+    } catch {
+      /* ignore */
+    }
+  }
+
+  // Procfile
+  const proc = read('Procfile')
+  if (proc !== null) {
+    for (const line of proc.split(/\r?\n/)) {
+      const m = line.match(/^([A-Za-z0-9_-]+):\s*(.+)$/)
+      if (m) add('procfile', m[1], m[2].trim(), 'long-running')
+    }
+  }
+
+  // Cargo
+  if (existsSync(join(root, 'Cargo.toml'))) {
+    add('cargo', 'run', 'cargo run', 'long-running')
+    add('cargo', 'build', 'cargo build', 'one-shot')
+    add('cargo', 'test', 'cargo test', 'one-shot')
+  }
+
+  // justfile recipes
+  const just = firstExisting(['justfile', 'Justfile', '.justfile'])
+  if (just) {
+    for (const line of (read(just) ?? '').split(/\r?\n/)) {
+      const m = line.match(/^([a-zA-Z0-9_-]+)(?:\s+[a-zA-Z0-9_]+)*\s*:(?!=)/)
+      if (m && m[1] !== 'set') add('just', m[1], `just ${m[1]}`)
+    }
+  }
+
+  // deno tasks
+  const deno = firstExisting(['deno.json', 'deno.jsonc'])
+  if (deno) {
+    try {
+      const raw = (read(deno) ?? '').replace(/^\s*\/\/.*$/gm, '')
+      const cfg = JSON.parse(raw) as { tasks?: Record<string, string> }
+      for (const t of Object.keys(cfg?.tasks ?? {})) add('deno', t, `deno task ${t}`)
+    } catch {
+      /* ignore */
+    }
+  }
+
+  const seen = new Set<string>()
+  return out.filter((s) => (seen.has(s.id) ? false : (seen.add(s.id), true)))
+}
+
 export function scanProject(root: string): ScannedProject {
   const packageManager = detectPackageManager(root)
   const patterns = readWorkspacePatterns(root)
@@ -131,6 +225,17 @@ export function scanProject(root: string): ScannedProject {
     workspaces.sort((a, b) => a.relPath.localeCompare(b.relPath))
   } else if (rootWs) {
     workspaces.push(rootWs)
+  }
+
+  // 非 npm 脚本（Makefile/compose/Procfile/cargo/just/deno）挂到根 workspace
+  const extra = detectExtraScripts(root)
+  if (extra.length > 0) {
+    let rootWsRef = workspaces.find((w) => w.relPath === '.')
+    if (!rootWsRef) {
+      rootWsRef = { name: rootWs?.name ?? basename(root), relPath: '.', scripts: [] }
+      workspaces.unshift(rootWsRef)
+    }
+    rootWsRef.scripts = [...rootWsRef.scripts, ...extra]
   }
 
   // .env 文件：扫描项目根目录 + 每个 workspace 目录

@@ -171,7 +171,7 @@ export function ProjectRow({
         onDoubleClick={startRename}
         title="双击重命名"
         className={cn(
-          'group relative flex cursor-pointer items-center gap-2.5 rounded-md py-1.5 pl-2.5 pr-1.5 transition-colors',
+          'group relative flex cursor-pointer items-center gap-2.5 rounded-md p-2 transition-colors',
           selected ? 'bg-accent' : menuOpen ? 'bg-accent/50' : 'hover:bg-accent/50'
         )}
       >

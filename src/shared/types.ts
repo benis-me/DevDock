@@ -4,11 +4,13 @@ export type SessionStatus = 'starting' | 'running' | 'exited' | 'errored'
 export type ThemeMode = 'system' | 'light' | 'dark'
 
 export interface ScriptDef {
-  id: string            // `${relPath}#${name}`
+  id: string            // `${relPath}#${name}`（非 npm 源用 `${relPath}#<source>:<name>`）
   name: string
-  command: string
+  command: string       // 展示用命令文本
   kind: ScriptKind
   cwd: string
+  source?: string       // 'npm' | 'make' | 'compose' | 'procfile' | 'cargo' | 'just' | 'deno'
+  runCmd?: string       // 实际运行命令（非 npm 必填；npm 留空由 packageManager 推导）
 }
 
 export interface WorkspacePkg {

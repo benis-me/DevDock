@@ -1,6 +1,8 @@
 import type { JSX } from 'react'
+import { useState } from 'react'
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels'
 import { useAppStore } from '@/store/useAppStore'
+import { cn } from '@/lib/utils'
 import { ScriptList } from '@/components/ScriptList/ScriptList'
 import { RightPanel } from '@/components/RightPanel'
 import { OpenWith } from '@/components/OpenWith'
@@ -11,6 +13,7 @@ export function ProjectView(): JSX.Element {
   const project = useAppStore((s) => s.projects.find((p) => p.id === s.selectedProjectId))
   const rescan = useAppStore((s) => s.rescanProject)
   const addProject = useAppStore((s) => s.addProject)
+  const [rescanning, setRescanning] = useState(false)
 
   if (!project) {
     return (
@@ -53,10 +56,18 @@ export function ProjectView(): JSX.Element {
         <Hint label="重新扫描">
           <button
             aria-label="重新扫描"
-            onClick={() => rescan(project.id)}
-            className="no-drag flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition hover:bg-accent hover:text-foreground active:scale-95"
+            disabled={rescanning}
+            onClick={async () => {
+              setRescanning(true)
+              try {
+                await rescan(project.id)
+              } finally {
+                setRescanning(false)
+              }
+            }}
+            className="no-drag flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition hover:bg-accent hover:text-foreground active:scale-95 disabled:opacity-60"
           >
-            <RefreshCw className="h-4 w-4" />
+            <RefreshCw className={cn('h-4 w-4', rescanning && 'animate-spin')} />
           </button>
         </Hint>
         <OpenWith path={project.path} />

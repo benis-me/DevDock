@@ -179,7 +179,7 @@ export class AppController extends EventEmitter {
     const found = this.findScript(projectId, scriptId)
     if (!found) return
     const { project, def } = found
-    const base = runCommand(project.packageManager, def.name)
+    const base = def.runCmd ?? runCommand(project.packageManager, def.name)
     // 未安装 portless 时降级为普通启动
     const usePortless =
       this.portlessOk && this.config.scriptPrefs[sessionKey(projectId, scriptId)]?.portless === true
