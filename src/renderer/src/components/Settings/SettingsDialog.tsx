@@ -212,13 +212,17 @@ function SectionBody({ id }: { id: SectionId }): JSX.Element {
   }
 }
 
-export function SettingsDialog(): JSX.Element {
+export function SettingsDialog({
+  side = 'bottom'
+}: {
+  side?: 'top' | 'bottom' | 'left' | 'right'
+}): JSX.Element {
   const [active, setActive] = useState<SectionId>('appearance')
   const current = NAV.find((n) => n.id === active)!
 
   return (
     <Dialog>
-      <Hint label="设置">
+      <Hint label="设置" side={side}>
         <DialogTrigger
           aria-label="设置"
           className="no-drag flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition hover:bg-accent hover:text-foreground active:scale-90"

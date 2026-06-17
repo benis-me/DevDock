@@ -264,38 +264,35 @@ body:has([data-radix-popper-content-wrapper]) .drag {
   display: none;
 }
 
-/* resizable panel drag handles */
+/* resizable panel drag handles — the line is drawn by ::before, so the collapsed
+   offset and the hover highlight live on one element (no flicker, no double line) */
 .resize-handle {
   position: relative;
   flex: 0 0 1px;
-  /* keep the line color as background-COLOR; the hover highlight is layered as a
-     background-IMAGE so removing it on hover-out doesn't flash (the shorthand
-     would otherwise reset background-color to transparent → a 1-frame flicker) */
+}
+.resize-handle::before {
+  content: "";
+  position: absolute;
+  inset: 0;
   background-color: var(--color-border);
 }
+/* collapsed: start the line at the project header's bottom border (h-11 = 2.75rem),
+   overlapping it by 1px, so the traffic-light strip stays clean and the lines meet */
+.resize-handle.is-collapsed::before {
+  top: calc(2.75rem - 1px);
+}
+/* wider invisible grab area */
 .resize-handle::after {
   content: "";
   position: absolute;
   inset-block: 0;
   inset-inline: -3px;
 }
-/* collapsed: don't run the divider through the traffic-light strip — draw the
-   line with a crisp pseudo-element starting 1px above the header's bottom border
-   (h-11 = 2.75rem) so the vertical + horizontal lines actually overlap/meet */
-.resize-handle.is-collapsed {
-  background: transparent;
-}
-.resize-handle.is-collapsed::before {
-  content: "";
-  position: absolute;
-  inset-inline: 0;
-  top: calc(2.75rem - 1px);
-  bottom: 0;
-  background: var(--color-border);
-}
-.resize-handle:hover,
-.resize-handle[data-resize-handle-state="hover"],
-.resize-handle[data-resize-handle-state="drag"] {
+/* hover: brighten the middle of the line, fading to the normal border color at the
+   ends — layered as background-image over the border background-color (no flicker) */
+.resize-handle:hover::before,
+.resize-handle[data-resize-handle-state="hover"]::before,
+.resize-handle[data-resize-handle-state="drag"]::before {
   background-image: linear-gradient(
     to bottom,
     var(--color-border),

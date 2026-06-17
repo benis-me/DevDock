@@ -75,7 +75,7 @@ export function Sidebar({
         </div>
         <div className="flex w-full flex-col items-center gap-1 border-t border-border py-2">
           <ThemeToggle collapsed />
-          <SettingsDialog />
+          <SettingsDialog side="right" />
         </div>
       </aside>
     )
