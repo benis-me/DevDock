@@ -1,22 +1,47 @@
-import type { CSSProperties, JSX } from 'react'
-import { Toaster as Sonner, type ToasterProps } from 'sonner'
-import { useAppStore } from '@/store/useAppStore'
+"use client"
 
-// shadcn 的 sonner 用 next-themes 取主题；本项目没有 next-themes，
-// 改为从应用 store 读取主题（其余与官方一致）。
-function Toaster(props: ToasterProps): JSX.Element {
+import { Toaster as Sonner, type ToasterProps } from "sonner"
+import { useAppStore } from "@/store/useAppStore"
+import { HugeiconsIcon } from "@hugeicons/react"
+import { CheckmarkCircle02Icon, InformationCircleIcon, Alert02Icon, MultiplicationSignCircleIcon, Loading03Icon } from "@hugeicons/core-free-icons"
+
+const Toaster = ({ ...props }: ToasterProps) => {
   const theme = useAppStore((s) => s.theme)
+
   return (
     <Sonner
-      theme={theme}
+      theme={theme as ToasterProps["theme"]}
       className="toaster group"
+      icons={{
+        success: (
+          <HugeiconsIcon icon={CheckmarkCircle02Icon} strokeWidth={2} className="size-4" />
+        ),
+        info: (
+          <HugeiconsIcon icon={InformationCircleIcon} strokeWidth={2} className="size-4" />
+        ),
+        warning: (
+          <HugeiconsIcon icon={Alert02Icon} strokeWidth={2} className="size-4" />
+        ),
+        error: (
+          <HugeiconsIcon icon={MultiplicationSignCircleIcon} strokeWidth={2} className="size-4" />
+        ),
+        loading: (
+          <HugeiconsIcon icon={Loading03Icon} strokeWidth={2} className="size-4 animate-spin" />
+        ),
+      }}
       style={
         {
-          '--normal-bg': 'var(--popover)',
-          '--normal-text': 'var(--popover-foreground)',
-          '--normal-border': 'var(--border)'
-        } as CSSProperties
+          "--normal-bg": "var(--popover)",
+          "--normal-text": "var(--popover-foreground)",
+          "--normal-border": "var(--border)",
+          "--border-radius": "var(--radius)",
+        } as React.CSSProperties
       }
+      toastOptions={{
+        classNames: {
+          toast: "cn-toast",
+        },
+      }}
       {...props}
     />
   )
