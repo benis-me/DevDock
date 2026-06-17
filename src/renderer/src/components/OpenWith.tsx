@@ -67,7 +67,7 @@ export function OpenWith({ path }: { path: string }): JSX.Element {
         <DropdownMenuTrigger asChild>
           <button
             aria-label="选择打开方式"
-            className="flex h-7 w-6 items-center justify-center border-l border-border text-muted-foreground transition hover:bg-accent hover:text-foreground"
+            className="flex h-7 w-6 items-center justify-center border-l border-border text-muted-foreground transition hover:bg-accent hover:text-foreground data-[state=open]:bg-accent data-[state=open]:text-foreground"
           >
             <ChevronDown className="h-3.5 w-3.5" />
           </button>

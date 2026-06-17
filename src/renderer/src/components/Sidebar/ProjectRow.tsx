@@ -222,7 +222,7 @@ export function ProjectRow({
               <button
                 title="更多"
                 aria-label="更多操作"
-                className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-foreground data-[state=open]:bg-accent data-[state=open]:text-foreground"
               >
                 <MoreHorizontal className="h-4 w-4" />
               </button>
