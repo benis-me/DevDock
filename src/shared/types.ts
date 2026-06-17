@@ -36,6 +36,7 @@ export interface Project {
   addedAt: number
   missing?: boolean
   pinned?: boolean
+  type?: string // 推断的项目类型（Xcode / Unity / Vite / Rust / …）用于显示图标
 }
 
 export interface AppInfo {

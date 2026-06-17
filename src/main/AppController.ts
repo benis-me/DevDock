@@ -125,6 +125,7 @@ export class AppController extends EventEmitter {
       isMonorepo: scanned.isMonorepo,
       workspaces: scanned.workspaces,
       envFiles: scanned.envFiles,
+      type: scanned.type,
       addedAt: Date.now()
     }
     this.config.projects.push(project)
@@ -196,6 +197,7 @@ export class AppController extends EventEmitter {
     p.isMonorepo = scanned.isMonorepo
     p.packageManager = scanned.packageManager
     p.envFiles = scanned.envFiles
+    p.type = scanned.type
     this.persist()
     this.watcher.watch(p)
     return { project: p, diff }

@@ -51,7 +51,15 @@ import {
   SiNpm,
   SiPnpm,
   SiYarn,
-  SiBun
+  SiBun,
+  SiXcode,
+  SiSwift,
+  SiUnity,
+  SiFlutter,
+  SiDotnet,
+  SiGradle,
+  SiGo,
+  SiPython
 } from '@icons-pack/react-simple-icons'
 
 function shortenPath(p: string): string {
@@ -59,34 +67,16 @@ function shortenPath(p: string): string {
   return m ? '~' + (m[1] ?? '') : p
 }
 
-// 从脚本命令/来源推断项目类型（框架优先，其次语言/运行时，最后包管理器）
-function projectType(project: Project): string | null {
-  const text = project.workspaces
-    .flatMap((w) => w.scripts.map((s) => s.command.toLowerCase()))
-    .join('\n')
-  const has = (re: RegExp): boolean => re.test(text)
-  if (has(/\bnext\s+(dev|build|start)/)) return 'Next.js'
-  if (has(/\bnuxt\b/)) return 'Nuxt'
-  if (has(/\bastro\b/)) return 'Astro'
-  if (has(/\bremix\b/)) return 'Remix'
-  if (has(/\bexpo\b/)) return 'Expo'
-  if (has(/\belectron(-vite)?\b/)) return 'Electron'
-  if (has(/react-scripts/)) return 'CRA'
-  if (has(/vue-cli-service/)) return 'Vue'
-  if (has(/sveltekit|svelte-kit|\bsvelte\b/)) return 'Svelte'
-  if (has(/@angular|(^|\s)ng\s/)) return 'Angular'
-  if (has(/\bvite(?!st)\b/)) return 'Vite'
-  const sources = new Set(project.workspaces.flatMap((w) => w.scripts.map((s) => s.source)))
-  if (sources.has('cargo')) return 'Rust'
-  if (sources.has('deno')) return 'Deno'
-  if (sources.has('compose')) return 'Docker'
-  if (sources.has('make')) return 'Make'
-  if (sources.has('just')) return 'just'
-  if (project.workspaces.some((w) => w.scripts.some((s) => !s.source))) return project.packageManager
-  return null
-}
-
+// 项目类型 → 品牌图标（类型由主进程 Scanner 推断，见 project.type）
 const TYPE_ICON: Record<string, ComponentType<{ size?: number; color?: string; className?: string }>> = {
+  Xcode: SiXcode,
+  Swift: SiSwift,
+  Unity: SiUnity,
+  Flutter: SiFlutter,
+  '.NET': SiDotnet,
+  JVM: SiGradle,
+  Go: SiGo,
+  Python: SiPython,
   'Next.js': SiNextdotjs,
   Nuxt: SiNuxt,
   Astro: SiAstro,
@@ -143,7 +133,7 @@ export function ProjectRow({
   }
 
   const monogram = project.name.trim().charAt(0).toUpperCase() || '·'
-  const type = projectType(project)
+  const type = project.type
   const TypeIcon = type ? (TYPE_ICON[type] ?? Terminal) : null
 
   const avatar = (

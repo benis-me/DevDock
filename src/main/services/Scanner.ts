@@ -32,6 +32,61 @@ export interface ScannedProject {
   packageManager: PackageManager
   workspaces: WorkspacePkg[]
   envFiles: EnvFile[]
+  type?: string
+}
+
+// 推断项目类型用于显示图标。先看特征文件/目录（iOS/Unity 等脚本里看不出来的），
+// 再看脚本命令里的前端框架，最后回退到语言/包管理器。
+export function detectProjectType(
+  root: string,
+  workspaces: WorkspacePkg[],
+  packageManager: PackageManager
+): string | undefined {
+  let entries: string[] = []
+  try {
+    entries = readdirSync(root)
+  } catch {
+    /* ignore */
+  }
+  const has = (f: string): boolean => existsSync(join(root, f))
+  const anyEnds = (...exts: string[]): boolean =>
+    entries.some((e) => exts.some((ext) => e.endsWith(ext)))
+
+  // 文件/目录特征（与前端框架基本不共存的平台）
+  if (anyEnds('.xcodeproj', '.xcworkspace')) return 'Xcode'
+  if (has('Package.swift')) return 'Swift'
+  if (has('Assets') && has('ProjectSettings')) return 'Unity'
+  if (has('pubspec.yaml')) return 'Flutter'
+  if (anyEnds('.sln', '.csproj', '.fsproj')) return '.NET'
+  if (has('build.gradle') || has('build.gradle.kts') || has('pom.xml')) return 'JVM'
+
+  // 脚本命令里的前端框架
+  const text = workspaces.flatMap((w) => w.scripts.map((s) => s.command.toLowerCase())).join('\n')
+  const cmd = (re: RegExp): boolean => re.test(text)
+  if (cmd(/\bnext\s+(dev|build|start)/)) return 'Next.js'
+  if (cmd(/\bnuxt\b/)) return 'Nuxt'
+  if (cmd(/\bastro\b/)) return 'Astro'
+  if (cmd(/\bremix\b/)) return 'Remix'
+  if (cmd(/\bexpo\b/)) return 'Expo'
+  if (cmd(/\belectron(-vite)?\b/)) return 'Electron'
+  if (cmd(/react-scripts/)) return 'CRA'
+  if (cmd(/vue-cli-service/)) return 'Vue'
+  if (cmd(/sveltekit|svelte-kit|\bsvelte\b/)) return 'Svelte'
+  if (cmd(/@angular|(^|\s)ng\s/)) return 'Angular'
+  if (cmd(/\bvite(?!st)\b/)) return 'Vite'
+
+  // 其它语言/运行时（可能与 JS 共存的放在框架判断之后）
+  if (has('go.mod')) return 'Go'
+  if (has('Cargo.toml')) return 'Rust'
+  if (has('pyproject.toml') || has('requirements.txt') || has('setup.py') || has('Pipfile'))
+    return 'Python'
+  if (has('deno.json') || has('deno.jsonc')) return 'Deno'
+
+  const sources = new Set(workspaces.flatMap((w) => w.scripts.map((s) => s.source)))
+  if (sources.has('compose')) return 'Docker'
+  if (has('package.json')) return packageManager
+  if (sources.has('make')) return 'Make'
+  return undefined
 }
 
 function scanEnvFiles(root: string, dirs: string[]): EnvFile[] {
@@ -243,5 +298,7 @@ export function scanProject(root: string): ScannedProject {
   for (const ws of workspaces) envDirs.add(ws.relPath === '.' ? root : join(root, ws.relPath))
   const envFiles = scanEnvFiles(root, [...envDirs])
 
-  return { isMonorepo, packageManager, workspaces, envFiles }
+  const type = detectProjectType(root, workspaces, packageManager)
+
+  return { isMonorepo, packageManager, workspaces, envFiles, type }
 }

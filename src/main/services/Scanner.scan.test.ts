@@ -74,3 +74,52 @@ describe('scanProject', () => {
     expect(root?.scripts.map((s) => s.name)).toContain('deploy')
   })
 })
+
+describe('project type detection', () => {
+  it('detects an Xcode project by .xcodeproj', () => {
+    mkdirSync(join(dir, 'MyApp.xcodeproj'), { recursive: true })
+    expect(scanProject(dir).type).toBe('Xcode')
+  })
+
+  it('detects a Swift package by Package.swift', () => {
+    writeFileSync(join(dir, 'Package.swift'), '// swift-tools-version:5.9\n')
+    expect(scanProject(dir).type).toBe('Swift')
+  })
+
+  it('detects a Unity project by Assets + ProjectSettings', () => {
+    mkdirSync(join(dir, 'Assets'), { recursive: true })
+    mkdirSync(join(dir, 'ProjectSettings'), { recursive: true })
+    expect(scanProject(dir).type).toBe('Unity')
+  })
+
+  it('detects Go / Flutter / Python by manifest files', () => {
+    const go = mkdtempSync(join(tmpdir(), 'devdock-go-'))
+    writeFileSync(join(go, 'go.mod'), 'module x\n')
+    expect(scanProject(go).type).toBe('Go')
+    rmSync(go, { recursive: true, force: true })
+
+    const fl = mkdtempSync(join(tmpdir(), 'devdock-fl-'))
+    writeFileSync(join(fl, 'pubspec.yaml'), 'name: x\n')
+    expect(scanProject(fl).type).toBe('Flutter')
+    rmSync(fl, { recursive: true, force: true })
+
+    const py = mkdtempSync(join(tmpdir(), 'devdock-py-'))
+    writeFileSync(join(py, 'pyproject.toml'), '[project]\nname="x"\n')
+    expect(scanProject(py).type).toBe('Python')
+    rmSync(py, { recursive: true, force: true })
+  })
+
+  it('detects a frontend framework from scripts (Vite)', () => {
+    writePkg('.', { name: 'app', scripts: { dev: 'vite', build: 'vite build' } })
+    expect(scanProject(dir).type).toBe('Vite')
+  })
+
+  it('falls back to the package manager for a plain node project', () => {
+    writePkg('.', { name: 'app', scripts: { start: 'node index.js' } })
+    expect(scanProject(dir).type).toBe('npm')
+  })
+
+  it('returns undefined for an empty directory', () => {
+    expect(scanProject(dir).type).toBeUndefined()
+  })
+})
