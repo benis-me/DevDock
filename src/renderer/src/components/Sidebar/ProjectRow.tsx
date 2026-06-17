@@ -215,7 +215,7 @@ export function ProjectRow({
             onDoubleClick={startRename}
             aria-label={project.name}
             className={cn(
-              'relative flex w-full flex-col items-center gap-1 rounded-md px-1 py-1.5 transition-colors',
+              'relative flex w-full flex-col items-center gap-1 px-1 py-1.5 transition-colors',
               selected ? 'bg-accent' : 'hover:bg-accent/50'
             )}
           >
