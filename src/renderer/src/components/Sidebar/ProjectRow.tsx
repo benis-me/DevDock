@@ -230,7 +230,7 @@ export function ProjectRow({
             <DropdownMenuContent
               align="end"
               sideOffset={6}
-              className="w-44 shadow-lg"
+              className="w-48"
               onCloseAutoFocus={(e) => e.preventDefault()}
             >
               <DropdownMenuItem onClick={startRename}>
