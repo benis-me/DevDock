@@ -9,7 +9,7 @@ import { OpenWith } from '@/components/OpenWith'
 import { Hint } from '@/components/ui/hint'
 import { RefreshCw, SquareTerminal, Plus, Play, Square, GitBranch } from 'lucide-react'
 
-export function ProjectView(): JSX.Element {
+export function ProjectView({ sidebarCollapsed = false }: { sidebarCollapsed?: boolean }): JSX.Element {
   const project = useAppStore((s) => s.projects.find((p) => p.id === s.selectedProjectId))
   const rescan = useAppStore((s) => s.rescanProject)
   const addProject = useAppStore((s) => s.addProject)
@@ -51,7 +51,14 @@ export function ProjectView(): JSX.Element {
 
   return (
     <div className="flex h-full w-full min-w-0 flex-col overflow-hidden">
-      <header className="drag flex h-11 items-center gap-2 border-b border-border px-3">
+      <header
+        className={cn(
+          'drag flex h-11 items-center gap-2 border-b border-border pr-3',
+          // collapsed: native traffic lights overflow the narrow rail into this
+          // header — pad left so the project name clears them
+          sidebarCollapsed ? 'pl-8' : 'pl-3'
+        )}
+      >
         <Hint label={project.path} side="bottom" delay={500}>
           <div className="no-drag flex min-w-0 items-center gap-2">
             <span className="truncate text-[13px] font-semibold tracking-tight text-foreground">

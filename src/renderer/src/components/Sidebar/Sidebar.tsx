@@ -58,7 +58,7 @@ export function Sidebar({
   if (collapsed) {
     return (
       <aside className="sheen flex h-full w-full flex-col items-center overflow-hidden bg-card/60">
-        <div className="drag h-9 w-full shrink-0" />
+        <div className="drag h-11 w-full shrink-0" />
         <Hint label="添加项目" side="right">
           <button
             onClick={addProject}

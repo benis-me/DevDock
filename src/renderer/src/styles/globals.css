@@ -277,6 +277,11 @@ body:has([data-radix-popper-content-wrapper]) .drag {
   inset-block: 0;
   inset-inline: -3px;
 }
+/* collapsed: don't run the divider through the traffic-light strip — start it at
+   the project header's bottom border (h-11 = 2.75rem) so the two lines meet */
+.resize-handle.is-collapsed {
+  background: linear-gradient(to bottom, transparent 2.75rem, var(--color-border) 2.75rem);
+}
 .resize-handle:hover,
 .resize-handle[data-resize-handle-state="hover"],
 .resize-handle[data-resize-handle-state="drag"] {
