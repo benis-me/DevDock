@@ -11,6 +11,7 @@ import { Sidebar } from '@/components/Sidebar/Sidebar'
 import { ProjectView } from '@/components/ProjectView'
 import { Toaster } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
+import { TrafficLights } from '@/components/TrafficLights'
 
 export default function App(): JSX.Element {
   const init = useAppStore((s) => s.init)
@@ -35,6 +36,7 @@ export default function App(): JSX.Element {
   return (
     <TooltipProvider delayDuration={350} skipDelayDuration={120}>
       <div className="h-screen w-screen select-none overflow-hidden bg-background text-[13px] text-foreground antialiased">
+        <TrafficLights />
         <PanelGroup direction="horizontal" autoSaveId="devdock-shell" className="h-full w-full">
           <Panel
             ref={sidebarRef}

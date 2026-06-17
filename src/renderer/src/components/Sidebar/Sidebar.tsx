@@ -106,26 +106,15 @@ export function Sidebar({
         <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
           项目
         </span>
-        <div className="flex items-center gap-0.5">
-          <Hint label="添加项目">
-            <button
-              onClick={addProject}
-              aria-label="添加项目"
-              className="no-drag flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground transition hover:bg-accent hover:text-foreground active:scale-90"
-            >
-              <Plus className="h-4 w-4" />
-            </button>
-          </Hint>
-          <Hint label="收起侧栏">
-            <button
-              onClick={onToggle}
-              aria-label="收起侧栏"
-              className="no-drag flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground transition hover:bg-accent hover:text-foreground active:scale-90"
-            >
-              <PanelLeftClose className="h-4 w-4" />
-            </button>
-          </Hint>
-        </div>
+        <Hint label="添加项目">
+          <button
+            onClick={addProject}
+            aria-label="添加项目"
+            className="no-drag flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground transition hover:bg-accent hover:text-foreground active:scale-90"
+          >
+            <Plus className="h-4 w-4" />
+          </button>
+        </Hint>
       </div>
 
       <div className="flex-1 overflow-y-auto overflow-x-hidden">
@@ -168,7 +157,18 @@ export function Sidebar({
 
       <div className="flex items-center justify-between border-t border-border p-2.5">
         <ThemeToggle />
-        <SettingsDialog />
+        <div className="flex items-center gap-0.5">
+          <Hint label="收起侧栏">
+            <button
+              onClick={onToggle}
+              aria-label="收起侧栏"
+              className="no-drag flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition hover:bg-accent hover:text-foreground active:scale-90"
+            >
+              <PanelLeftClose className="h-4 w-4" />
+            </button>
+          </Hint>
+          <SettingsDialog />
+        </div>
       </div>
     </aside>
   )

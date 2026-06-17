@@ -58,6 +58,11 @@ const api: DevDockApi = {
   git: {
     statusAll: () => ipcRenderer.invoke(IPC.GitStatusAll)
   },
+  win: {
+    minimize: () => ipcRenderer.invoke(IPC.WindowMinimize),
+    maximize: () => ipcRenderer.invoke(IPC.WindowMaximize),
+    close: () => ipcRenderer.invoke(IPC.WindowClose)
+  },
   ui: {
     getState: () => ipcRenderer.invoke(IPC.UiGetState),
     setState: (partial) => ipcRenderer.invoke(IPC.UiSetState, partial)
