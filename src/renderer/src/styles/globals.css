@@ -7,26 +7,27 @@
 :root {
   --radius: 0.625rem;
 
-  --background: oklch(0.98 0 0);
-  --foreground: oklch(0.205 0 0);
+  /* 标准 token 对齐 shadcn 官方 neutral 调色板（保持黑白灰） */
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.205 0 0);
+  --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.145 0 0);
 
-  --primary: oklch(0.22 0 0);
+  --primary: oklch(0.205 0 0);
   --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.96 0 0);
-  --secondary-foreground: oklch(0.24 0 0);
-  --muted: oklch(0.96 0 0);
-  --muted-foreground: oklch(0.5 0 0);
-  --accent: oklch(0.945 0 0);
-  --accent-foreground: oklch(0.22 0 0);
-  --destructive: oklch(0.58 0.22 20);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
 
-  --border: oklch(0.9 0 0);
-  --input: oklch(0.9 0 0);
-  --ring: oklch(0.6 0 0);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
 
   --brand: oklch(0.28 0 0);
   /* status colors carry hue so states are distinguishable (UI elsewhere stays neutral) */
@@ -42,26 +43,27 @@
 
 /* ---------------- Dark theme — neutral black / white / gray ---------------- */
 .dark {
-  --background: oklch(0.165 0 0);
-  --foreground: oklch(0.97 0 0);
+  /* 标准 token 对齐 shadcn 官方 neutral 调色板（保持黑白灰） */
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.97 0 0);
-  --popover: oklch(0.215 0 0);
-  --popover-foreground: oklch(0.97 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
 
-  --primary: oklch(0.92 0 0);
-  --primary-foreground: oklch(0.2 0 0);
-  --secondary: oklch(0.255 0 0);
-  --secondary-foreground: oklch(0.97 0 0);
-  --muted: oklch(0.255 0 0);
-  --muted-foreground: oklch(0.67 0 0);
-  --accent: oklch(0.275 0 0);
-  --accent-foreground: oklch(0.98 0 0);
-  --destructive: oklch(0.66 0.21 22);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
 
-  --border: oklch(1 0 0 / 9%);
-  --input: oklch(1 0 0 / 13%);
-  --ring: oklch(0.55 0 0);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
 
   --brand: oklch(0.92 0 0);
   /* status colors carry hue so states are distinguishable (UI elsewhere stays neutral) */
