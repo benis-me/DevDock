@@ -296,9 +296,9 @@ body:has([data-radix-popper-content-wrapper]) .drag {
 .resize-handle[data-resize-handle-state="drag"] {
   background: linear-gradient(
     to bottom,
-    transparent,
+    var(--color-border),
     color-mix(in oklab, var(--color-foreground) 32%, transparent) 50%,
-    transparent
+    var(--color-border)
   );
 }
 
