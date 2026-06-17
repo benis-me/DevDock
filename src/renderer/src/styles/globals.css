@@ -268,8 +268,10 @@ body:has([data-radix-popper-content-wrapper]) .drag {
 .resize-handle {
   position: relative;
   flex: 0 0 1px;
-  background: var(--color-border);
-  transition: background-color 0.15s;
+  /* keep the line color as background-COLOR; the hover highlight is layered as a
+     background-IMAGE so removing it on hover-out doesn't flash (the shorthand
+     would otherwise reset background-color to transparent → a 1-frame flicker) */
+  background-color: var(--color-border);
 }
 .resize-handle::after {
   content: "";
@@ -294,7 +296,7 @@ body:has([data-radix-popper-content-wrapper]) .drag {
 .resize-handle:hover,
 .resize-handle[data-resize-handle-state="hover"],
 .resize-handle[data-resize-handle-state="drag"] {
-  background: linear-gradient(
+  background-image: linear-gradient(
     to bottom,
     var(--color-border),
     color-mix(in oklab, var(--color-foreground) 32%, transparent) 50%,
