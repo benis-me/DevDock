@@ -8,6 +8,11 @@ all from one window.
 > macOS-first, built with Electron + React. Black / white / gray, keyboard-friendly,
 > terminal-forward.
 
+<p align="center">
+  <img src="docs/screenshot.png" width="900"
+    alt="DevDock — a project's scripts grouped into services and tasks, with a running script's live terminal on the right" />
+</p>
+
 ## Features
 
 - **Project sidebar** — add folders (button or drag-and-drop), rename, pin to top, drag to
@@ -98,6 +103,24 @@ bun run test
 bunx tsc -p tsconfig.node.json --noEmit
 bunx tsc -p tsconfig.web.json --noEmit
 bun run build
+```
+
+## Acknowledgements
+
+DevDock stands on the shoulders of the open-source projects listed in
+[Tech stack](#tech-stack) — Electron, React, `xterm.js`, `node-pty`, CodeMirror,
+Radix UI / shadcn/ui, Tailwind CSS, Zustand and more — plus the
+[Geist](https://vercel.com/font) and [JetBrains Mono](https://www.jetbrains.com/lp/mono/)
+typefaces. Copyright of each library remains with its respective authors; thanks to all
+their maintainers.
+
+Every bundled dependency uses a permissive license (MIT, ISC, BSD, Apache-2.0, OFL-1.1, …) —
+there is no copyleft (GPL / LGPL / AGPL) code in this project, so no special obligations beyond
+preserving the upstream copyright and license notices. When you distribute a packaged build,
+ship those third-party license texts alongside it; generate the manifest with:
+
+```bash
+bunx license-checker-rseidelsohn --production --out THIRD-PARTY-LICENSES.txt
 ```
 
 ## License
