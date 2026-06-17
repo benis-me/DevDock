@@ -46,6 +46,9 @@ export function registerIpc(controller: AppController, getWindow: () => BrowserW
   ipcMain.handle(IPC.ScriptsSetPortless, (_e, pid: string, sid: string, enabled: boolean) =>
     controller.setScriptPortless(pid, sid, enabled)
   )
+  ipcMain.handle(IPC.ScriptsRunInTerminal, (_e, pid: string, sid: string, appId: string) =>
+    controller.runScriptInTerminal(pid, sid, appId)
+  )
   ipcMain.handle(IPC.PortlessAvailable, () => controller.isPortlessAvailable())
 
   ipcMain.handle(IPC.TerminalWrite, (_e, key: string, data: string) => controller.writeTerminal(key, data))

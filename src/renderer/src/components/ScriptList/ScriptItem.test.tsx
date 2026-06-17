@@ -21,7 +21,7 @@ describe('ScriptItem', () => {
     render(<ScriptItem projectId="p1" def={def} />)
     expect(screen.getByText('dev')).toBeInTheDocument()
     expect(screen.getByText('vite')).toBeInTheDocument()
-    expect(screen.getByTitle('启动')).toBeInTheDocument()
+    expect(screen.getByTitle('在应用内启动')).toBeInTheDocument()
   })
 
   it('shows PID, url and stop affordance when running', () => {

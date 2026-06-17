@@ -14,6 +14,7 @@ export const IPC = {
   ScriptsRestart: 'scripts:restart',
   ScriptsPrefs: 'scripts:prefs',
   ScriptsSetPortless: 'scripts:setPortless',
+  ScriptsRunInTerminal: 'scripts:runInTerminal',
   PortlessAvailable: 'portless:available',
   TerminalWrite: 'terminal:write',
   TerminalResize: 'terminal:resize',

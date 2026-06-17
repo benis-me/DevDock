@@ -1,5 +1,5 @@
 import { shell } from 'electron'
-import { existsSync, readdirSync, readFileSync } from 'fs'
+import { existsSync, readdirSync, readFileSync, writeFileSync, chmodSync } from 'fs'
 import { join } from 'path'
 import { homedir, tmpdir } from 'os'
 import { execFile, execFileSync } from 'child_process'
@@ -104,4 +104,35 @@ export function openWith(appId: string, folder: string): void {
     return
   }
   execFile('open', ['-a', appPath, folder], () => {})
+}
+
+const KNOWN_BY_ID = new Map(KNOWN.map((k) => [k.id, k]))
+
+// detectApps 可能还没跑过（缓存为空），这里只需要 .app 路径、不需要图标，直接现查
+function appPathFor(appId: string): string | null {
+  const cached = cache?.paths.get(appId)
+  if (cached) return cached
+  const k = KNOWN_BY_ID.get(appId)
+  return k ? findAppPath(k.appName) : null
+}
+
+function shellSingleQuote(s: string): string {
+  return `'${s.replace(/'/g, `'\\''`)}'`
+}
+
+// 在外部终端里运行脚本：写一个临时 .command（cd + 命令），用选定终端打开它。
+// 这条进程完全脱离本 app —— 不进 sessions、不注入 .env、不套 portless。
+export function runInTerminal(appId: string, cwd: string, command: string): void {
+  const script = `#!/bin/zsh\ncd ${shellSingleQuote(cwd)}\n${command}\n`
+  const file = join(tmpdir(), `devdock-run-${Date.now()}.command`)
+  try {
+    writeFileSync(file, script)
+    chmodSync(file, 0o755)
+  } catch {
+    return
+  }
+  const appPath = appPathFor(appId)
+  // 找不到指定终端就退回系统默认（.command 默认关联 Terminal.app）
+  const args = appPath ? ['-a', appPath, file] : [file]
+  execFile('open', args, () => {})
 }

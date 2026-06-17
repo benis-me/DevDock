@@ -27,6 +27,7 @@ export interface DevDockApi {
     restart(projectId: string, scriptId: string): Promise<void>
     prefs(): Promise<Record<string, ScriptPrefs>>
     setPortless(projectId: string, scriptId: string, enabled: boolean): Promise<void>
+    runInTerminal(projectId: string, scriptId: string, appId: string): Promise<void>
     portlessAvailable(): Promise<boolean>
   }
   terminal: {

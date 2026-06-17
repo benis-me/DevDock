@@ -5,7 +5,8 @@ import { sessionKey } from '@shared/util'
 import { portFromUrl } from '@shared/port'
 import type { ScriptDef, SessionStatus } from '@shared/types'
 import { useElapsed } from './useElapsed'
-import { Play, Square, RotateCw, ArrowUpRight } from 'lucide-react'
+import { Play, Square, RotateCw, ArrowUpRight, ChevronDown } from 'lucide-react'
+import { TerminalRunMenu } from '@/components/TerminalRunMenu'
 
 const DOT: Record<SessionStatus | 'idle', string> = {
   idle: 'bg-idle',
@@ -140,9 +141,20 @@ export function ScriptItem({ projectId, def }: { projectId: string; def: ScriptD
               </IconBtn>
             </>
           ) : (
-            <IconBtn title="启动" tone="run" onClick={() => startScript(projectId, def.id)}>
-              <Play className="h-3.5 w-3.5" />
-            </IconBtn>
+            <div className="flex items-center">
+              <IconBtn title="在应用内启动" tone="run" onClick={() => startScript(projectId, def.id)}>
+                <Play className="h-3.5 w-3.5" />
+              </IconBtn>
+              <TerminalRunMenu projectId={projectId} scriptId={def.id}>
+                <button
+                  title="在外部终端运行"
+                  aria-label="在外部终端运行"
+                  className="flex h-7 w-4 items-center justify-center rounded-md text-muted-foreground/50 transition-colors hover:bg-accent hover:text-foreground data-[state=open]:bg-accent data-[state=open]:text-foreground"
+                >
+                  <ChevronDown className="h-3 w-3" />
+                </button>
+              </TerminalRunMenu>
+            </div>
           )}
         </div>
       </div>

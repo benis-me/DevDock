@@ -27,6 +27,7 @@ import { ProjectStore } from './services/ProjectStore'
 import { ProcessManager } from './services/ProcessManager'
 import { PortService } from './services/PortService'
 import { scanProject } from './services/Scanner'
+import { runInTerminal } from './services/appLauncher'
 import { diffScripts, type ScriptDiff } from './services/scriptDiff'
 import type { IFileWatcher } from './services/FileWatcher'
 
@@ -333,6 +334,25 @@ export class AppController extends EventEmitter {
 
   restartScript(projectId: string, scriptId: string): void {
     this.startScript(projectId, scriptId)
+  }
+
+  // 解析脚本的实际运行命令与工作目录（不含 portless / env 注入）
+  private resolveRunCommand(
+    projectId: string,
+    scriptId: string
+  ): { cwd: string; command: string } | null {
+    const found = this.findScript(projectId, scriptId)
+    if (!found) return null
+    const { project, def } = found
+    const command = def.runCmd ?? runCommand(project.packageManager, def.name)
+    return { cwd: def.cwd, command }
+  }
+
+  // 在外部终端运行：交给系统终端，进程不归本 app 管理
+  runScriptInTerminal(projectId: string, scriptId: string, appId: string): void {
+    const r = this.resolveRunCommand(projectId, scriptId)
+    if (!r) return
+    runInTerminal(appId, r.cwd, r.command)
   }
 
   // ---- sessions / terminal ----

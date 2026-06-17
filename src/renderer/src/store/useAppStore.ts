@@ -40,6 +40,7 @@ interface AppState {
   setPinned(id: string, pinned: boolean): Promise<void>
   openWith(appId: string, path: string): Promise<void>
   startScript(projectId: string, scriptId: string): Promise<void>
+  runInTerminal(projectId: string, scriptId: string, appId: string): Promise<void>
   stopScript(key: string): Promise<void>
   restartScript(projectId: string, scriptId: string): Promise<void>
   startAllServices(projectId: string): Promise<void>
@@ -271,6 +272,10 @@ export const useAppStore = create<AppState>((set, get) => ({
     const key = sessionKey(projectId, scriptId)
     get().openTab(key)
     await window.devdock.scripts.start(projectId, scriptId)
+  },
+
+  async runInTerminal(projectId, scriptId, appId) {
+    await window.devdock.scripts.runInTerminal(projectId, scriptId, appId)
   },
 
   async stopScript(key) {

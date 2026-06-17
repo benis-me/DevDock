@@ -1,7 +1,8 @@
 import type { JSX, ReactNode } from 'react'
 import { useAppStore } from '@/store/useAppStore'
 import { cn } from '@/lib/utils'
-import { X, SquareTerminal, Play, FileCog } from 'lucide-react'
+import { X, SquareTerminal, Play, FileCog, Terminal, ChevronDown } from 'lucide-react'
+import { TerminalRunMenu } from '@/components/TerminalRunMenu'
 import { TerminalView } from '@/components/Terminal/TerminalView'
 import { EnvEditor } from '@/components/Env/EnvEditor'
 import type { Project, ScriptDef } from '@shared/types'
@@ -41,12 +42,23 @@ function NotStarted({ projectId, def }: { projectId: string; def: ScriptDef }): 
         <div className="text-sm font-medium text-foreground">{def.name}</div>
         <div className="mt-1 font-mono text-xs text-muted-foreground">{def.command}</div>
       </div>
-      <button
-        onClick={() => startScript(projectId, def.id)}
-        className="inline-flex items-center gap-1.5 rounded-md bg-foreground px-3.5 py-1.5 text-xs font-semibold text-background transition-all hover:bg-foreground/90 active:scale-95"
-      >
-        <Play className="h-3.5 w-3.5" /> 启动脚本
-      </button>
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => startScript(projectId, def.id)}
+          className="inline-flex items-center gap-1.5 rounded-md bg-foreground px-3.5 py-1.5 text-xs font-semibold text-background transition-all hover:bg-foreground/90 active:scale-95"
+        >
+          <Play className="h-3.5 w-3.5" /> 启动脚本
+        </button>
+        <TerminalRunMenu projectId={projectId} scriptId={def.id} align="center">
+          <button
+            title="在外部终端运行"
+            aria-label="在外部终端运行"
+            className="inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground data-[state=open]:bg-accent data-[state=open]:text-foreground"
+          >
+            <Terminal className="h-3.5 w-3.5" /> 外部终端 <ChevronDown className="h-3 w-3" />
+          </button>
+        </TerminalRunMenu>
+      </div>
       <p className="text-[11px] text-muted-foreground/70">尚未运行 · 启动后这里显示实时输出</p>
     </div>
   )

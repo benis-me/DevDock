@@ -26,6 +26,7 @@ const api: DevDockApi = {
     restart: (pid, sid) => ipcRenderer.invoke(IPC.ScriptsRestart, pid, sid),
     prefs: () => ipcRenderer.invoke(IPC.ScriptsPrefs),
     setPortless: (pid, sid, enabled) => ipcRenderer.invoke(IPC.ScriptsSetPortless, pid, sid, enabled),
+    runInTerminal: (pid, sid, appId) => ipcRenderer.invoke(IPC.ScriptsRunInTerminal, pid, sid, appId),
     portlessAvailable: () => ipcRenderer.invoke(IPC.PortlessAvailable)
   },
   terminal: {
