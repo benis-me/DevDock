@@ -7,9 +7,23 @@ import { ScriptList } from '@/components/ScriptList/ScriptList'
 import { RightPanel } from '@/components/RightPanel'
 import { OpenWith } from '@/components/OpenWith'
 import { Hint } from '@/components/ui/hint'
-import { RefreshCw, SquareTerminal, Plus, Play, Square, GitBranch } from 'lucide-react'
+import {
+  RefreshCw,
+  SquareTerminal,
+  Plus,
+  Play,
+  Square,
+  GitBranch,
+  PanelLeftOpen
+} from 'lucide-react'
 
-export function ProjectView({ sidebarCollapsed = false }: { sidebarCollapsed?: boolean }): JSX.Element {
+export function ProjectView({
+  sidebarCollapsed = false,
+  onToggleSidebar
+}: {
+  sidebarCollapsed?: boolean
+  onToggleSidebar?: () => void
+}): JSX.Element {
   const project = useAppStore((s) => s.projects.find((p) => p.id === s.selectedProjectId))
   const rescan = useAppStore((s) => s.rescanProject)
   const addProject = useAppStore((s) => s.addProject)
@@ -19,9 +33,24 @@ export function ProjectView({ sidebarCollapsed = false }: { sidebarCollapsed?: b
   const stopAllInProject = useAppStore((s) => s.stopAllInProject)
   const [rescanning, setRescanning] = useState(false)
 
+  // when collapsed, the sidebar has no expand control — it lives here, left of the title
+  const expandButton =
+    sidebarCollapsed && onToggleSidebar ? (
+      <Hint label="展开侧栏">
+        <button
+          onClick={onToggleSidebar}
+          aria-label="展开侧栏"
+          className="no-drag flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition hover:bg-accent hover:text-foreground active:scale-95"
+        >
+          <PanelLeftOpen className="h-4 w-4" />
+        </button>
+      </Hint>
+    ) : null
+
   if (!project) {
     return (
-      <div className="drag flex h-full w-full flex-col items-center justify-center gap-5 px-6">
+      <div className="drag relative flex h-full w-full flex-col items-center justify-center gap-5 px-6">
+        {expandButton && <div className="absolute left-8 top-3">{expandButton}</div>}
         <div className="glow-run flex h-16 w-16 items-center justify-center rounded-2xl bg-brand/10 text-brand">
           <SquareTerminal className="h-8 w-8" strokeWidth={1.5} />
         </div>
@@ -59,6 +88,7 @@ export function ProjectView({ sidebarCollapsed = false }: { sidebarCollapsed?: b
           sidebarCollapsed ? 'pl-8' : 'pl-3'
         )}
       >
+        {expandButton}
         <Hint label={project.path} side="bottom" delay={500}>
           <div className="no-drag flex min-w-0 items-center gap-2">
             <span className="truncate text-[13px] font-semibold tracking-tight text-foreground">

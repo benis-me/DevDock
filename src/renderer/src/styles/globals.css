@@ -294,7 +294,12 @@ body:has([data-radix-popper-content-wrapper]) .drag {
 .resize-handle:hover,
 .resize-handle[data-resize-handle-state="hover"],
 .resize-handle[data-resize-handle-state="drag"] {
-  background: color-mix(in oklab, var(--color-foreground) 28%, transparent);
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    color-mix(in oklab, var(--color-foreground) 32%, transparent) 50%,
+    transparent
+  );
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -6,7 +6,7 @@ import { ThemeToggle } from '@/components/ThemeToggle'
 import { SettingsDialog } from '@/components/Settings/SettingsDialog'
 import { Hint } from '@/components/ui/hint'
 import { cn } from '@/lib/utils'
-import { Plus, FolderPlus, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { Plus, FolderPlus, PanelLeftClose } from 'lucide-react'
 import type { Project } from '@shared/types'
 
 // pinned first, preserving array order within each group (Array.sort is stable)
@@ -76,15 +76,6 @@ export function Sidebar({
         <div className="flex w-full flex-col items-center gap-1 border-t border-border py-2">
           <ThemeToggle collapsed />
           <SettingsDialog />
-          <Hint label="展开侧栏" side="right">
-            <button
-              onClick={onToggle}
-              aria-label="展开侧栏"
-              className="no-drag flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition hover:bg-accent hover:text-foreground active:scale-90"
-            >
-              <PanelLeftOpen className="h-4 w-4" />
-            </button>
-          </Hint>
         </div>
       </aside>
     )
@@ -106,15 +97,26 @@ export function Sidebar({
         <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
           项目
         </span>
-        <Hint label="添加项目">
-          <button
-            onClick={addProject}
-            aria-label="添加项目"
-            className="no-drag flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground transition hover:bg-accent hover:text-foreground active:scale-90"
-          >
-            <Plus className="h-4 w-4" />
-          </button>
-        </Hint>
+        <div className="flex items-center gap-0.5">
+          <Hint label="添加项目">
+            <button
+              onClick={addProject}
+              aria-label="添加项目"
+              className="no-drag flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground transition hover:bg-accent hover:text-foreground active:scale-90"
+            >
+              <Plus className="h-4 w-4" />
+            </button>
+          </Hint>
+          <Hint label="收起侧栏">
+            <button
+              onClick={onToggle}
+              aria-label="收起侧栏"
+              className="no-drag flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground transition hover:bg-accent hover:text-foreground active:scale-90"
+            >
+              <PanelLeftClose className="h-4 w-4" />
+            </button>
+          </Hint>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto overflow-x-hidden">
@@ -157,18 +159,7 @@ export function Sidebar({
 
       <div className="flex items-center justify-between border-t border-border p-2.5">
         <ThemeToggle />
-        <div className="flex items-center gap-0.5">
-          <Hint label="收起侧栏">
-            <button
-              onClick={onToggle}
-              aria-label="收起侧栏"
-              className="no-drag flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition hover:bg-accent hover:text-foreground active:scale-90"
-            >
-              <PanelLeftClose className="h-4 w-4" />
-            </button>
-          </Hint>
-          <SettingsDialog />
-        </div>
+        <SettingsDialog />
       </div>
     </aside>
   )

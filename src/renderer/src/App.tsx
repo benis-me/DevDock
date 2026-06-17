@@ -55,7 +55,7 @@ export default function App(): JSX.Element {
             className={`resize-handle${collapsed ? ' is-collapsed' : ''}`}
           />
           <Panel id="main" order={2} minSize={40} className="flex">
-            <ProjectView sidebarCollapsed={collapsed} />
+            <ProjectView sidebarCollapsed={collapsed} onToggleSidebar={toggleSidebar} />
           </Panel>
         </PanelGroup>
         <Toaster position="bottom-right" />
