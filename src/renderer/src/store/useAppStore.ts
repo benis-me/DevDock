@@ -49,6 +49,8 @@ interface AppState {
   closeTab(key: string): void
   openEnvFile(path: string): void
   closeEnv(path: string): void
+  reorderTabs(orderedKeys: string[]): void
+  reorderEnvTabs(orderedPaths: string[]): void
   setPortless(projectId: string, scriptId: string, enabled: boolean): Promise<void>
   killPort(port: number): Promise<number[]>
   freePortAndRestart(projectId: string, scriptId: string, port: number): Promise<void>
@@ -363,6 +365,23 @@ export const useAppStore = create<AppState>((set, get) => ({
         selectedScriptId:
           st.selectedScriptId === key ? openTabs[openTabs.length - 1] : st.selectedScriptId
       }
+    })
+  },
+
+  // 把某项目内重排后的 tab 顺序写回全局 openTabs（只动属于该子集的槽位，其它项目顺序不变）
+  reorderTabs(orderedKeys) {
+    set((st) => {
+      const inSet = new Set(orderedKeys)
+      let i = 0
+      return { openTabs: st.openTabs.map((k) => (inSet.has(k) ? orderedKeys[i++] : k)) }
+    })
+  },
+
+  reorderEnvTabs(orderedPaths) {
+    set((st) => {
+      const inSet = new Set(orderedPaths)
+      let i = 0
+      return { openEnvPaths: st.openEnvPaths.map((p) => (inSet.has(p) ? orderedPaths[i++] : p)) }
     })
   },
 

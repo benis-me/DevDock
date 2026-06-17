@@ -1,4 +1,5 @@
-import type { JSX, ReactNode } from 'react'
+import type { JSX, ReactNode, DragEvent } from 'react'
+import { useState } from 'react'
 import { useAppStore } from '@/store/useAppStore'
 import { cn } from '@/lib/utils'
 import { X, SquareTerminal, Play, FileCog, Terminal, ChevronDown } from 'lucide-react'
@@ -67,15 +68,26 @@ function NotStarted({ projectId, def }: { projectId: string; def: ScriptDef }): 
 function Tab({
   active,
   onClick,
+  onClose,
   children
 }: {
   active: boolean
   onClick: () => void
+  onClose?: () => void
   children: ReactNode
 }): JSX.Element {
   return (
     <div
       onClick={onClick}
+      onMouseDown={(e) => {
+        if (e.button === 1) e.preventDefault() // 阻止中键触发自动滚动
+      }}
+      onAuxClick={(e) => {
+        if (e.button === 1 && onClose) {
+          e.preventDefault()
+          onClose()
+        }
+      }}
       className={cn(
         'group/tab flex h-7 shrink-0 cursor-pointer items-center gap-1.5 rounded-md px-2 text-xs transition-colors',
         active
@@ -133,6 +145,11 @@ export function RightPanel({ project }: { project: Project }): JSX.Element {
   const closeTab = useAppStore((s) => s.closeTab)
   const closeEnv = useAppStore((s) => s.closeEnv)
   const sessions = useAppStore((s) => s.sessions)
+  const reorderTabs = useAppStore((s) => s.reorderTabs)
+  const reorderEnvTabs = useAppStore((s) => s.reorderEnvTabs)
+
+  const [tabDrag, setTabDrag] = useState<{ id: string; group: 'term' | 'env' } | null>(null)
+  const [dropTab, setDropTab] = useState<{ id: string; pos: 'before' | 'after' } | null>(null)
 
   const projectId = project.id
   const termTabs = openTabs.filter((k) => k.startsWith(projectId + '::'))
@@ -148,6 +165,64 @@ export function RightPanel({ project }: { project: Project }): JSX.Element {
   const notStarted =
     activeTermKey && !sessions[activeTermKey] ? findDef(projects, activeTermKey) : null
 
+  const startTabDrag = (e: DragEvent, id: string, group: 'term' | 'env'): void => {
+    setTabDrag({ id, group })
+    e.dataTransfer.effectAllowed = 'move'
+  }
+  const onTabDragOver = (e: DragEvent, id: string, group: 'term' | 'env'): void => {
+    if (!tabDrag || tabDrag.group !== group) return // 只允许同组（终端/.env）内重排
+    e.preventDefault()
+    if (id === tabDrag.id) {
+      setDropTab(null)
+      return
+    }
+    const rect = e.currentTarget.getBoundingClientRect()
+    const pos = e.clientX < rect.left + rect.width / 2 ? 'before' : 'after'
+    setDropTab((cur) => (cur?.id === id && cur.pos === pos ? cur : { id, pos }))
+  }
+  const endTabDrag = (): void => {
+    setTabDrag(null)
+    setDropTab(null)
+  }
+  const commitTabDrop = (): void => {
+    if (tabDrag && dropTab) {
+      const ids = [...(tabDrag.group === 'term' ? termTabs : envTabs)]
+      const from = ids.indexOf(tabDrag.id)
+      if (from >= 0) {
+        ids.splice(from, 1)
+        let ti = ids.indexOf(dropTab.id)
+        if (ti < 0) ti = ids.length
+        ids.splice(dropTab.pos === 'after' ? ti + 1 : ti, 0, tabDrag.id)
+        if (tabDrag.group === 'term') reorderTabs(ids)
+        else reorderEnvTabs(ids)
+      }
+    }
+    setTabDrag(null)
+    setDropTab(null)
+  }
+  const wrapDrag = (id: string, group: 'term' | 'env', node: ReactNode): JSX.Element => (
+    <div
+      key={id}
+      draggable
+      onDragStart={(e) => startTabDrag(e, id, group)}
+      onDragOver={(e) => onTabDragOver(e, id, group)}
+      onDrop={(e) => {
+        e.stopPropagation()
+        commitTabDrop()
+      }}
+      onDragEnd={endTabDrag}
+      className={cn('relative flex shrink-0 transition-opacity', tabDrag?.id === id && 'opacity-40')}
+    >
+      {dropTab?.id === id && dropTab.pos === 'before' && (
+        <span className="pointer-events-none absolute inset-y-1 -left-0.5 z-10 w-0.5 rounded-full bg-brand" />
+      )}
+      {node}
+      {dropTab?.id === id && dropTab.pos === 'after' && (
+        <span className="pointer-events-none absolute inset-y-1 -right-0.5 z-10 w-0.5 rounded-full bg-brand" />
+      )}
+    </div>
+  )
+
   return (
     <div className="flex h-full w-full min-w-0 flex-col overflow-hidden bg-background">
       {/* unified tab bar — scrollbar hidden so it doesn't consume height */}
@@ -159,22 +234,38 @@ export function RightPanel({ project }: { project: Project }): JSX.Element {
           </div>
         ) : (
           <>
-            {termTabs.map((key) => (
-              <Tab key={key} active={activeTermKey === key} onClick={() => openTab(key)}>
-                <TabIcon
+            {termTabs.map((key) =>
+              wrapDrag(
+                key,
+                'term',
+                <Tab
+                  active={activeTermKey === key}
+                  onClick={() => openTab(key)}
                   onClose={() => closeTab(key)}
-                  icon={<SquareTerminal className="h-3.5 w-3.5" />}
-                />
-                <span className="font-mono">{tabLabel(key)}</span>
-                <StatusDot status={sessions[key]?.status} />
-              </Tab>
-            ))}
-            {envTabs.map((p) => (
-              <Tab key={p} active={activeEnvPath === p} onClick={() => openEnvFile(p)}>
-                <TabIcon onClose={() => closeEnv(p)} icon={<FileCog className="h-3.5 w-3.5" />} />
-                <span className="font-mono">{fileName(p)}</span>
-              </Tab>
-            ))}
+                >
+                  <TabIcon
+                    onClose={() => closeTab(key)}
+                    icon={<SquareTerminal className="h-3.5 w-3.5" />}
+                  />
+                  <span className="font-mono">{tabLabel(key)}</span>
+                  <StatusDot status={sessions[key]?.status} />
+                </Tab>
+              )
+            )}
+            {envTabs.map((p) =>
+              wrapDrag(
+                p,
+                'env',
+                <Tab
+                  active={activeEnvPath === p}
+                  onClick={() => openEnvFile(p)}
+                  onClose={() => closeEnv(p)}
+                >
+                  <TabIcon onClose={() => closeEnv(p)} icon={<FileCog className="h-3.5 w-3.5" />} />
+                  <span className="font-mono">{fileName(p)}</span>
+                </Tab>
+              )
+            )}
           </>
         )}
       </div>

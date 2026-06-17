@@ -28,6 +28,7 @@ export function Sidebar({
 
   const [dropActive, setDropActive] = useState(false)
   const [dragId, setDragId] = useState<string | null>(null)
+  const [dropTarget, setDropTarget] = useState<{ id: string; pos: 'before' | 'after' } | null>(null)
 
   const ordered = sortProjects(projects)
 
@@ -46,13 +47,20 @@ export function Sidebar({
     }
   }
 
-  const handleRowDrop = (targetId: string): void => {
-    if (!dragId || dragId === targetId) return
-    const ids = projects.map((p) => p.id).filter((id) => id !== dragId)
-    const ti = ids.indexOf(targetId)
-    ids.splice(ti < 0 ? ids.length : ti, 0, dragId)
-    reorderProjects(ids)
+  const commitRowDrop = (): void => {
+    if (dragId && dropTarget) {
+      const ids = ordered.map((p) => p.id)
+      const from = ids.indexOf(dragId)
+      if (from >= 0) {
+        ids.splice(from, 1)
+        let ti = ids.indexOf(dropTarget.id)
+        if (ti < 0) ti = ids.length
+        ids.splice(dropTarget.pos === 'after' ? ti + 1 : ti, 0, dragId)
+        reorderProjects(ids)
+      }
+    }
     setDragId(null)
+    setDropTarget(null)
   }
 
   if (collapsed) {
@@ -138,18 +146,40 @@ export function Sidebar({
                   e.dataTransfer.effectAllowed = 'move'
                 }}
                 onDragOver={(e) => {
-                  if (dragId) e.preventDefault()
+                  if (!dragId) return
+                  e.preventDefault()
+                  if (p.id === dragId) {
+                    setDropTarget(null)
+                    return
+                  }
+                  const rect = e.currentTarget.getBoundingClientRect()
+                  const pos = e.clientY < rect.top + rect.height / 2 ? 'before' : 'after'
+                  setDropTarget((cur) =>
+                    cur?.id === p.id && cur.pos === pos ? cur : { id: p.id, pos }
+                  )
                 }}
                 onDrop={(e) => {
                   if (dragId) {
                     e.stopPropagation()
-                    handleRowDrop(p.id)
+                    commitRowDrop()
                   }
                 }}
-                onDragEnd={() => setDragId(null)}
-                className={cn('rounded-md transition-opacity', dragId === p.id && 'opacity-40')}
+                onDragEnd={() => {
+                  setDragId(null)
+                  setDropTarget(null)
+                }}
+                className={cn(
+                  'relative rounded-md transition-opacity',
+                  dragId === p.id && 'opacity-40'
+                )}
               >
+                {dropTarget?.id === p.id && dropTarget.pos === 'before' && (
+                  <span className="pointer-events-none absolute inset-x-1 -top-px z-10 h-0.5 rounded-full bg-brand" />
+                )}
                 <ProjectRow project={p} />
+                {dropTarget?.id === p.id && dropTarget.pos === 'after' && (
+                  <span className="pointer-events-none absolute inset-x-1 -bottom-px z-10 h-0.5 rounded-full bg-brand" />
+                )}
               </div>
             ))
           )}
