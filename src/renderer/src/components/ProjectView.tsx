@@ -53,7 +53,7 @@ export function ProjectView({ sidebarCollapsed = false }: { sidebarCollapsed?: b
     <div className="flex h-full w-full min-w-0 flex-col overflow-hidden">
       <header
         className={cn(
-          'drag flex h-11 items-center gap-2 border-b border-border pr-2',
+          'drag flex h-11 items-center gap-2 border-b border-border pr-1.5',
           // collapsed: native traffic lights overflow the narrow rail into this
           // header — pad left so the project name clears them
           sidebarCollapsed ? 'pl-8' : 'pl-3'
