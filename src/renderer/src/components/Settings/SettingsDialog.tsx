@@ -135,7 +135,7 @@ function SectionBody({ id }: { id: SectionId }): JSX.Element {
           </Row>
           <Row title="光标闪烁">
             <Switch
-              label="光标闪烁"
+              aria-label="光标闪烁"
               checked={settings.terminalCursorBlink}
               onCheckedChange={(v) => setSettings({ terminalCursorBlink: v })}
             />
@@ -147,7 +147,7 @@ function SectionBody({ id }: { id: SectionId }): JSX.Element {
         <Card>
           <Row title="注入项目 .env" desc="启动脚本时合并 .env / .env.local">
             <Switch
-              label="注入项目 .env"
+              aria-label="注入项目 .env"
               checked={settings.injectEnv}
               onCheckedChange={(v) => setSettings({ injectEnv: v })}
             />
@@ -159,7 +159,7 @@ function SectionBody({ id }: { id: SectionId }): JSX.Element {
             }
           >
             <Switch
-              label="默认用 portless 启动"
+              aria-label="默认用 portless 启动"
               disabled={!portlessAvailable}
               checked={settings.portlessDefault}
               onCheckedChange={(v) => setSettings({ portlessDefault: v })}
@@ -167,14 +167,14 @@ function SectionBody({ id }: { id: SectionId }): JSX.Element {
           </Row>
           <Row title="退出前确认" desc="仍有脚本运行时退出二次确认">
             <Switch
-              label="退出前确认"
+              aria-label="退出前确认"
               checked={settings.confirmOnQuit}
               onCheckedChange={(v) => setSettings({ confirmOnQuit: v })}
             />
           </Row>
           <Row title="完成时通知" desc="窗口未聚焦时，脚本异常退出 / 任务完成发系统通知">
             <Switch
-              label="完成时通知"
+              aria-label="完成时通知"
               checked={settings.notifyOnFinish}
               onCheckedChange={(v) => setSettings({ notifyOnFinish: v })}
             />

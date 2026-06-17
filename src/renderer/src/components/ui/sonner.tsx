@@ -1,22 +1,21 @@
-import { Toaster as Sonner, type ToasterProps } from "sonner"
+import type { CSSProperties, JSX } from 'react'
+import { Toaster as Sonner, type ToasterProps } from 'sonner'
+import { useAppStore } from '@/store/useAppStore'
 
-function Toaster({ ...props }: ToasterProps) {
+// shadcn 的 sonner 用 next-themes 取主题；本项目没有 next-themes，
+// 改为从应用 store 读取主题（其余与官方一致）。
+function Toaster(props: ToasterProps): JSX.Element {
+  const theme = useAppStore((s) => s.theme)
   return (
     <Sonner
+      theme={theme}
       className="toaster group"
       style={
         {
-          "--normal-bg": "var(--popover)",
-          "--normal-border": "var(--border)",
-          "--normal-text": "var(--popover-foreground)",
-          "--description-color": "var(--muted-foreground)",
-          "--error-bg": "hsl(var(--destructive))",
-          "--error-border": "hsl(var(--destructive))",
-          "--error-text": "hsl(var(--destructive-foreground))",
-          "--success-bg": "hsl(var(--primary))",
-          "--success-border": "hsl(var(--primary))",
-          "--success-text": "hsl(var(--primary-foreground))",
-        } as React.CSSProperties
+          '--normal-bg': 'var(--popover)',
+          '--normal-text': 'var(--popover-foreground)',
+          '--normal-border': 'var(--border)'
+        } as CSSProperties
       }
       {...props}
     />
