@@ -34,8 +34,6 @@ function createWindow(): void {
       contextIsolation: true
     }
   })
-  // 隐藏原生红绿灯，改用自绘的更紧凑控件（见 renderer/TrafficLights）
-  if (process.platform === 'darwin') mainWindow.setWindowButtonVisibility(false)
   mainWindow.on('ready-to-show', () => mainWindow?.show())
   mainWindow.on('closed', () => (mainWindow = null))
 

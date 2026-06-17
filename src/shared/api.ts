@@ -59,11 +59,6 @@ export interface DevDockApi {
   git: {
     statusAll(): Promise<Record<string, GitInfo | null>>
   }
-  win: {
-    minimize(): Promise<void>
-    maximize(): Promise<void>
-    close(): Promise<void>
-  }
   ui: {
     getState(): Promise<UiState>
     setState(partial: Partial<UiState>): Promise<void>

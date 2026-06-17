@@ -73,14 +73,6 @@ export function registerIpc(controller: AppController, getWindow: () => BrowserW
 
   ipcMain.handle(IPC.GitStatusAll, () => controller.getGitStatuses())
 
-  ipcMain.handle(IPC.WindowMinimize, () => getWindow()?.minimize())
-  ipcMain.handle(IPC.WindowMaximize, () => {
-    const w = getWindow()
-    if (!w) return
-    w.isMaximized() ? w.unmaximize() : w.maximize()
-  })
-  ipcMain.handle(IPC.WindowClose, () => getWindow()?.close())
-
   ipcMain.handle(IPC.UiGetState, () => controller.getUiState())
   ipcMain.handle(IPC.UiSetState, (_e, partial) => {
     controller.setUiState(partial)
