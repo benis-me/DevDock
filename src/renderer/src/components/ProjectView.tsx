@@ -140,8 +140,10 @@ export function ProjectView({
             disabled={rescanning}
             onClick={async () => {
               setRescanning(true)
+              // 扫描通常几毫秒就完成，保证图标至少转一下，给出明确反馈
+              const minSpin = new Promise((r) => setTimeout(r, 500))
               try {
-                await rescan(project.id)
+                await Promise.all([rescan(project.id), minSpin])
               } finally {
                 setRescanning(false)
               }
