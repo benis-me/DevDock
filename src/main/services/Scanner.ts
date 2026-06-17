@@ -1,4 +1,5 @@
-import { existsSync, readFileSync, readdirSync, type Dirent } from 'fs'
+import { existsSync } from 'fs'
+import { readFile, readdir } from 'fs/promises'
 import { basename, dirname, join, relative, sep } from 'path'
 import fg from 'fast-glob'
 import yaml from 'js-yaml'
@@ -37,14 +38,14 @@ export interface ScannedProject {
 
 // 推断项目类型用于显示图标。先看特征文件/目录（iOS/Unity 等脚本里看不出来的），
 // 再看脚本命令里的前端框架，最后回退到语言/包管理器。
-export function detectProjectType(
+export async function detectProjectType(
   root: string,
   workspaces: WorkspacePkg[],
   packageManager: PackageManager
-): string | undefined {
+): Promise<string | undefined> {
   let entries: string[] = []
   try {
-    entries = readdirSync(root)
+    entries = await readdir(root)
   } catch {
     /* ignore */
   }
@@ -89,22 +90,22 @@ export function detectProjectType(
   return undefined
 }
 
-function scanEnvFiles(root: string, dirs: string[]): EnvFile[] {
+async function scanEnvFiles(root: string, dirs: string[]): Promise<EnvFile[]> {
   const out: EnvFile[] = []
   const seen = new Set<string>()
   for (const dir of dirs) {
-    let entries: Dirent[]
+    let entries: string[]
     try {
-      entries = readdirSync(dir, { withFileTypes: true })
+      entries = await readdir(dir)
     } catch {
       continue
     }
-    for (const e of entries) {
-      if (!e.isFile() || !ENV_FILE.test(e.name)) continue
-      const full = join(dir, e.name)
+    for (const name of entries) {
+      if (!ENV_FILE.test(name)) continue
+      const full = join(dir, name)
       if (seen.has(full)) continue
       seen.add(full)
-      out.push({ name: e.name, relPath: toRel(root, dir), path: full })
+      out.push({ name, relPath: toRel(root, dir), path: full })
     }
   }
   out.sort((a, b) =>
@@ -113,9 +114,9 @@ function scanEnvFiles(root: string, dirs: string[]): EnvFile[] {
   return out
 }
 
-function readJson(file: string): any {
+async function readJson(file: string): Promise<any> {
   try {
-    return JSON.parse(readFileSync(file, 'utf8'))
+    return JSON.parse(await readFile(file, 'utf8'))
   } catch {
     return null
   }
@@ -126,8 +127,8 @@ function toRel(root: string, full: string): string {
   return r === '' ? '.' : r
 }
 
-function buildWorkspace(root: string, pkgJsonPath: string): WorkspacePkg | null {
-  const pkg = readJson(pkgJsonPath)
+async function buildWorkspace(root: string, pkgJsonPath: string): Promise<WorkspacePkg | null> {
+  const pkg = await readJson(pkgJsonPath)
   if (!pkg) return null
   const cwd = dirname(pkgJsonPath)
   const relPath = toRel(root, cwd)
@@ -142,9 +143,9 @@ function buildWorkspace(root: string, pkgJsonPath: string): WorkspacePkg | null 
   return { name: pkg.name ?? relPath, relPath, scripts }
 }
 
-function readWorkspacePatterns(root: string): string[] {
+async function readWorkspacePatterns(root: string): Promise<string[]> {
   const patterns: string[] = []
-  const rootPkg = readJson(join(root, 'package.json'))
+  const rootPkg = await readJson(join(root, 'package.json'))
   if (rootPkg?.workspaces) {
     const ws = Array.isArray(rootPkg.workspaces) ? rootPkg.workspaces : rootPkg.workspaces.packages
     if (Array.isArray(ws)) patterns.push(...ws)
@@ -152,7 +153,7 @@ function readWorkspacePatterns(root: string): string[] {
   const pnpmFile = join(root, 'pnpm-workspace.yaml')
   if (existsSync(pnpmFile)) {
     try {
-      const parsed = yaml.load(readFileSync(pnpmFile, 'utf8')) as { packages?: string[] }
+      const parsed = yaml.load(await readFile(pnpmFile, 'utf8')) as { packages?: string[] }
       if (Array.isArray(parsed?.packages)) patterns.push(...parsed.packages)
     } catch {
       /* ignore malformed yaml */
@@ -162,7 +163,7 @@ function readWorkspacePatterns(root: string): string[] {
 }
 
 // 非 npm 的可运行脚本来源：Makefile / docker-compose / Procfile / Cargo / justfile / deno
-function detectExtraScripts(root: string): ScriptDef[] {
+async function detectExtraScripts(root: string): Promise<ScriptDef[]> {
   const out: ScriptDef[] = []
   const add = (source: string, name: string, runCmd: string, kind?: ScriptKind): void => {
     out.push({
@@ -175,9 +176,9 @@ function detectExtraScripts(root: string): ScriptDef[] {
       runCmd
     })
   }
-  const read = (f: string): string | null => {
+  const read = async (f: string): Promise<string | null> => {
     try {
-      return readFileSync(join(root, f), 'utf8')
+      return await readFile(join(root, f), 'utf8')
     } catch {
       return null
     }
@@ -188,7 +189,7 @@ function detectExtraScripts(root: string): ScriptDef[] {
   // Makefile targets
   const mk = firstExisting(['Makefile', 'makefile', 'GNUmakefile'])
   if (mk) {
-    const text = read(mk) ?? ''
+    const text = (await read(mk)) ?? ''
     const targets = new Set<string>()
     for (const line of text.split(/\r?\n/)) {
       const m = line.match(/^([A-Za-z0-9][\w.-]*)\s*:(?!=)/)
@@ -206,7 +207,7 @@ function detectExtraScripts(root: string): ScriptDef[] {
   ])
   if (compose) {
     try {
-      const doc = yaml.load(read(compose) ?? '') as { services?: Record<string, unknown> }
+      const doc = yaml.load((await read(compose)) ?? '') as { services?: Record<string, unknown> }
       for (const svc of Object.keys(doc?.services ?? {}))
         add('compose', svc, `docker compose up ${svc}`, 'long-running')
     } catch {
@@ -215,7 +216,7 @@ function detectExtraScripts(root: string): ScriptDef[] {
   }
 
   // Procfile
-  const proc = read('Procfile')
+  const proc = await read('Procfile')
   if (proc !== null) {
     for (const line of proc.split(/\r?\n/)) {
       const m = line.match(/^([A-Za-z0-9_-]+):\s*(.+)$/)
@@ -233,7 +234,7 @@ function detectExtraScripts(root: string): ScriptDef[] {
   // justfile recipes
   const just = firstExisting(['justfile', 'Justfile', '.justfile'])
   if (just) {
-    for (const line of (read(just) ?? '').split(/\r?\n/)) {
+    for (const line of ((await read(just)) ?? '').split(/\r?\n/)) {
       const m = line.match(/^([a-zA-Z0-9_-]+)(?:\s+[a-zA-Z0-9_]+)*\s*:(?!=)/)
       if (m && m[1] !== 'set') add('just', m[1], `just ${m[1]}`)
     }
@@ -243,7 +244,7 @@ function detectExtraScripts(root: string): ScriptDef[] {
   const deno = firstExisting(['deno.json', 'deno.jsonc'])
   if (deno) {
     try {
-      const raw = (read(deno) ?? '').replace(/^\s*\/\/.*$/gm, '')
+      const raw = ((await read(deno)) ?? '').replace(/^\s*\/\/.*$/gm, '')
       const cfg = JSON.parse(raw) as { tasks?: Record<string, string> }
       for (const t of Object.keys(cfg?.tasks ?? {})) add('deno', t, `deno task ${t}`)
     } catch {
@@ -255,35 +256,33 @@ function detectExtraScripts(root: string): ScriptDef[] {
   return out.filter((s) => (seen.has(s.id) ? false : (seen.add(s.id), true)))
 }
 
-export function scanProject(root: string): ScannedProject {
+export async function scanProject(root: string): Promise<ScannedProject> {
   const packageManager = detectPackageManager(root)
-  const patterns = readWorkspacePatterns(root)
+  const patterns = await readWorkspacePatterns(root)
   const isMonorepo = patterns.length > 0
   const workspaces: WorkspacePkg[] = []
 
-  const rootWs = buildWorkspace(root, join(root, 'package.json'))
+  const rootWs = await buildWorkspace(root, join(root, 'package.json'))
 
   if (isMonorepo) {
     // monorepo 根包自身的脚本（如 build:all/release）也要纳入
     if (rootWs && rootWs.scripts.length > 0) workspaces.push(rootWs)
     const pkgGlobs = patterns.map((p) => `${p.replace(/\/$/, '')}/package.json`)
-    const found = fg.sync(pkgGlobs, {
+    const found = await fg(pkgGlobs, {
       cwd: root,
       absolute: true,
       ignore: ['**/node_modules/**'],
       onlyFiles: true
     })
-    for (const f of found) {
-      const ws = buildWorkspace(root, f)
-      if (ws) workspaces.push(ws)
-    }
+    const built = await Promise.all(found.map((f) => buildWorkspace(root, f)))
+    for (const ws of built) if (ws) workspaces.push(ws)
     workspaces.sort((a, b) => a.relPath.localeCompare(b.relPath))
   } else if (rootWs) {
     workspaces.push(rootWs)
   }
 
   // 非 npm 脚本（Makefile/compose/Procfile/cargo/just/deno）挂到根 workspace
-  const extra = detectExtraScripts(root)
+  const extra = await detectExtraScripts(root)
   if (extra.length > 0) {
     let rootWsRef = workspaces.find((w) => w.relPath === '.')
     if (!rootWsRef) {
@@ -296,9 +295,9 @@ export function scanProject(root: string): ScannedProject {
   // .env 文件：扫描项目根目录 + 每个 workspace 目录
   const envDirs = new Set<string>([root])
   for (const ws of workspaces) envDirs.add(ws.relPath === '.' ? root : join(root, ws.relPath))
-  const envFiles = scanEnvFiles(root, [...envDirs])
+  const envFiles = await scanEnvFiles(root, [...envDirs])
 
-  const type = detectProjectType(root, workspaces, packageManager)
+  const type = await detectProjectType(root, workspaces, packageManager)
 
   return { isMonorepo, packageManager, workspaces, envFiles, type }
 }

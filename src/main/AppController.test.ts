@@ -26,41 +26,41 @@ beforeEach(() => {
 afterEach(() => rmSync(dir, { recursive: true, force: true }))
 
 describe('AppController', () => {
-  it('adds a project from a path and scans scripts', () => {
+  it('adds a project from a path and scans scripts', async () => {
     const c = new AppController(configFile, fakeWatcher())
-    const p = c.addProjectFromPath(projDir)
+    const p = await c.addProjectFromPath(projDir)
     expect(p).not.toBeNull()
     expect(p!.name).toBe('demo')
     expect(p!.workspaces[0].scripts.map((s) => s.name).sort()).toEqual(['build', 'dev'])
     expect(c.listProjects()).toHaveLength(1)
   })
 
-  it('persists projects across instances', () => {
+  it('persists projects across instances', async () => {
     const c1 = new AppController(configFile, fakeWatcher())
-    c1.addProjectFromPath(projDir)
+    await c1.addProjectFromPath(projDir)
     const c2 = new AppController(configFile, fakeWatcher())
     expect(c2.listProjects()).toHaveLength(1)
   })
 
-  it('rescan returns diff with changed scripts', () => {
+  it('rescan returns diff with changed scripts', async () => {
     const c = new AppController(configFile, fakeWatcher())
-    const p = c.addProjectFromPath(projDir)!
+    const p = (await c.addProjectFromPath(projDir))!
     writeFileSync(
       join(projDir, 'package.json'),
       JSON.stringify({ name: 'demo', scripts: { dev: 'vite --host', test: 'vitest' } })
     )
-    const { project, diff } = c.rescanProject(p.id)
+    const { project, diff } = await c.rescanProject(p.id)
     expect(project!.workspaces[0].scripts.map((s) => s.name).sort()).toEqual(['dev', 'test'])
     expect(diff.changed).toEqual(['.#dev'])
     expect(diff.added).toEqual(['.#test'])
     expect(diff.removed).toEqual(['.#build'])
   })
 
-  it('marks project missing when path no longer exists', () => {
+  it('marks project missing when path no longer exists', async () => {
     const c = new AppController(configFile, fakeWatcher())
-    const p = c.addProjectFromPath(projDir)!
+    const p = (await c.addProjectFromPath(projDir))!
     rmSync(projDir, { recursive: true, force: true })
-    const { project } = c.rescanProject(p.id)
+    const { project } = await c.rescanProject(p.id)
     expect(project!.missing).toBe(true)
   })
 

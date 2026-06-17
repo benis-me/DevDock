@@ -103,21 +103,23 @@ export class AppController extends EventEmitter {
   }
 
   startWatchingAll(): void {
-    // 重扫每个项目以填充 envFiles（旧配置可能没有）并建立监听
+    // 建立监听 + 异步重扫每个项目以填充 envFiles/type（旧配置可能没有）。
+    // 重扫异步进行，不阻塞启动；完成后用 project:updated 通知渲染层。
     for (const p of this.config.projects) {
-      if (!p.missing) {
-        this.rescanProject(p.id)
-        this.watcher.watch(p)
-        void this.refreshGit(p.id)
-      }
+      if (p.missing) continue
+      this.watcher.watch(p)
+      void this.refreshGit(p.id)
+      void this.rescanProject(p.id).then((r) => {
+        if (r.project) this.emit('project:updated', r.project)
+      })
     }
   }
 
-  addProjectFromPath(dirPath: string): Project | null {
+  async addProjectFromPath(dirPath: string): Promise<Project | null> {
     if (!existsSync(dirPath)) return null
     const existing = this.config.projects.find((p) => p.path === dirPath)
     if (existing) return existing
-    const scanned = scanProject(dirPath)
+    const scanned = await scanProject(dirPath)
     const project: Project = {
       id: randomUUID(),
       name: scanned.workspaces.find((w) => w.relPath === '.')?.name ?? basename(dirPath),
@@ -173,18 +175,17 @@ export class AppController extends EventEmitter {
     }
   }
 
-  relocateProject(id: string, newPath: string): Project | null {
+  async relocateProject(id: string, newPath: string): Promise<Project | null> {
     const p = this.getProject(id)
     if (!p) return null
     p.path = newPath
     p.missing = false
     this.persist()
-    const result = this.rescanProject(id).project
     this.watcher.watch(p) // path changed — point the watcher at the new location
-    return result
+    return (await this.rescanProject(id)).project
   }
 
-  rescanProject(id: string): { project: Project | null; diff: ScriptDiff } {
+  async rescanProject(id: string): Promise<{ project: Project | null; diff: ScriptDiff }> {
     const p = this.getProject(id)
     if (!p) return { project: null, diff: { added: [], removed: [], changed: [] } }
     if (!existsSync(p.path)) {
@@ -194,7 +195,7 @@ export class AppController extends EventEmitter {
     }
     p.missing = false
     const before = p.workspaces
-    const scanned = scanProject(p.path)
+    const scanned = await scanProject(p.path)
     const diff = diffScripts(before, scanned.workspaces)
     p.workspaces = scanned.workspaces
     p.isMonorepo = scanned.isMonorepo
@@ -369,15 +370,16 @@ export class AppController extends EventEmitter {
       void this.refreshGit(projectId)
       return
     }
-    const { project, diff } = this.rescanProject(projectId)
-    if (!project) return
-    this.emit('project:updated', project)
-    void this.refreshGit(projectId)
-    const running = new Set(this.pm.list().map((s) => s.scriptId))
-    for (const id of [...diff.changed, ...diff.removed]) {
-      const key = sessionKey(projectId, id)
-      if (running.has(key)) this.emit('script:changed', key)
-    }
+    void this.rescanProject(projectId).then(({ project, diff }) => {
+      if (!project) return
+      this.emit('project:updated', project)
+      void this.refreshGit(projectId)
+      const running = new Set(this.pm.list().map((s) => s.scriptId))
+      for (const id of [...diff.changed, ...diff.removed]) {
+        const key = sessionKey(projectId, id)
+        if (running.has(key)) this.emit('script:changed', key)
+      }
+    })
   }
 
   shutdown(): void {

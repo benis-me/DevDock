@@ -26,7 +26,7 @@ export function registerIpc(controller: AppController, getWindow: () => BrowserW
   })
   ipcMain.handle(IPC.ProjectsRemove, (_e, id: string) => controller.removeProject(id))
   ipcMain.handle(IPC.ProjectsRename, (_e, id: string, name: string) => controller.renameProject(id, name))
-  ipcMain.handle(IPC.ProjectsRescan, (_e, id: string) => controller.rescanProject(id).project)
+  ipcMain.handle(IPC.ProjectsRescan, async (_e, id: string) => (await controller.rescanProject(id)).project)
   ipcMain.handle(IPC.ProjectsRelocate, async (_e, id: string) => {
     const win = getWindow()
     const res = await dialog.showOpenDialog(win!, { properties: ['openDirectory'] })
