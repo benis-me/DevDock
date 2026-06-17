@@ -107,6 +107,7 @@ export class AppController extends EventEmitter {
     for (const p of this.config.projects) {
       if (!p.missing) {
         this.rescanProject(p.id)
+        this.watcher.watch(p)
         void this.refreshGit(p.id)
       }
     }
@@ -178,7 +179,9 @@ export class AppController extends EventEmitter {
     p.path = newPath
     p.missing = false
     this.persist()
-    return this.rescanProject(id).project
+    const result = this.rescanProject(id).project
+    this.watcher.watch(p) // path changed — point the watcher at the new location
+    return result
   }
 
   rescanProject(id: string): { project: Project | null; diff: ScriptDiff } {
@@ -199,7 +202,9 @@ export class AppController extends EventEmitter {
     p.envFiles = scanned.envFiles
     p.type = scanned.type
     this.persist()
-    this.watcher.watch(p)
+    // NOTE: do NOT (re)create the watcher here — chokidar.watch walks the project
+    // tree, and rescan runs on every file save, which caused a UI freeze. The
+    // watcher is established once on add / startup / relocate.
     return { project: p, diff }
   }
 
@@ -357,13 +362,17 @@ export class AppController extends EventEmitter {
 
   // ---- watch callback ----
   handleWatchChange(projectId: string, changedPath?: string): void {
+    // .env changes don't alter scripts/workspaces — skip the full rescan, just
+    // notify the editor and refresh git (avoids needless work on every save)
+    if (changedPath && /(^|[\\/])\.env(\..+)?$/.test(changedPath)) {
+      this.emit('env:changed', changedPath)
+      void this.refreshGit(projectId)
+      return
+    }
     const { project, diff } = this.rescanProject(projectId)
     if (!project) return
     this.emit('project:updated', project)
     void this.refreshGit(projectId)
-    if (changedPath && /(^|[\\/])\.env(\..+)?$/.test(changedPath)) {
-      this.emit('env:changed', changedPath)
-    }
     const running = new Set(this.pm.list().map((s) => s.scriptId))
     for (const id of [...diff.changed, ...diff.removed]) {
       const key = sessionKey(projectId, id)

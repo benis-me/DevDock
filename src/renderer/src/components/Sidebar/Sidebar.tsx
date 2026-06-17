@@ -91,7 +91,7 @@ export function Sidebar({
         dropActive && 'ring-2 ring-inset ring-brand/60'
       )}
     >
-      <div className="drag flex h-11 shrink-0 items-center justify-end pr-2">
+      <div className="drag flex h-11 shrink-0 items-center justify-end pr-3">
         <Hint label="收起侧栏">
           <button
             onClick={onToggle}
