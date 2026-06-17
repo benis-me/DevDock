@@ -155,8 +155,14 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-* {
-  border-color: var(--color-border);
+/* Default border color (Tailwind v4 defaults to currentColor). MUST live in
+   @layer base — an unlayered `*` rule beats every layered utility regardless of
+   specificity, which clobbers border-transparent / border-input / border-ring
+   (broke the switch's transparent border and the input's focus border). */
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
 }
 
 html,
