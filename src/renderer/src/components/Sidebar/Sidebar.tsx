@@ -102,7 +102,7 @@ export function Sidebar({
     >
       <div className="drag h-9 shrink-0" />
 
-      <div className="flex items-center justify-between px-3 py-1.5">
+      <div className="flex items-center justify-between py-1.5 pl-3.5 pr-3">
         <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
           项目
         </span>
