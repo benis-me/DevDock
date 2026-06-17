@@ -139,13 +139,19 @@ export function ProjectRow({
   const avatar = (
     <div
       className={cn(
-        'flex h-7 w-7 shrink-0 items-center justify-center rounded-md border text-[11px] font-semibold',
+        'flex h-7 w-7 shrink-0 items-center justify-center rounded-md border',
         project.missing
           ? 'border-destructive/40 bg-destructive/10 text-destructive'
           : 'border-border bg-muted/70 text-muted-foreground'
       )}
     >
-      {project.missing ? <AlertTriangle className="h-3.5 w-3.5" /> : monogram}
+      {project.missing ? (
+        <AlertTriangle className="h-3.5 w-3.5" />
+      ) : TypeIcon ? (
+        <TypeIcon size={15} color="currentColor" />
+      ) : (
+        <span className="text-[11px] font-semibold">{monogram}</span>
+      )}
     </div>
   )
 
@@ -209,15 +215,20 @@ export function ProjectRow({
             onDoubleClick={startRename}
             aria-label={project.name}
             className={cn(
-              'relative flex h-9 w-9 shrink-0 items-center justify-center rounded-md transition-colors',
+              'relative flex w-full flex-col items-center gap-1 rounded-md px-1 py-1.5 transition-colors',
               selected ? 'bg-accent' : 'hover:bg-accent/50'
             )}
           >
-            {selected && <span className="absolute inset-y-1.5 left-0 w-[3px] rounded-r-full bg-brand" />}
-            {avatar}
-            {runningCount > 0 && (
-              <span className="glow-run breathe absolute right-1 top-1 h-2 w-2 rounded-full bg-run ring-2 ring-card" />
-            )}
+            {selected && <span className="absolute inset-y-2 left-0 w-[3px] rounded-r-full bg-brand" />}
+            <span className="relative">
+              {avatar}
+              {runningCount > 0 && (
+                <span className="glow-run breathe absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-run ring-2 ring-card" />
+              )}
+            </span>
+            <span className="max-w-full truncate text-[9px] leading-none text-muted-foreground">
+              {project.name}
+            </span>
           </button>
         </Hint>
         {dialogs}
@@ -254,18 +265,8 @@ export function ProjectRow({
               {project.name}
             </span>
           </div>
-          <div className="flex items-center gap-1.5">
-            {TypeIcon && (
-              <span
-                title={type ?? undefined}
-                className="flex shrink-0 items-center text-muted-foreground"
-              >
-                <TypeIcon size={12} color="currentColor" />
-              </span>
-            )}
-            <span className="truncate font-mono text-[11px] text-muted-foreground">
-              {shortenPath(project.path)}
-            </span>
+          <div className="truncate font-mono text-[11px] text-muted-foreground">
+            {shortenPath(project.path)}
           </div>
         </div>
 
