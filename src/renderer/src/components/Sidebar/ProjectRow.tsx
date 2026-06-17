@@ -1,4 +1,4 @@
-import type { JSX } from 'react'
+import type { JSX, ComponentType } from 'react'
 import { useState } from 'react'
 import { useAppStore } from '@/store/useAppStore'
 import { cn } from '@/lib/utils'
@@ -30,12 +30,81 @@ import {
   FolderOpen,
   MapPin,
   Pin,
-  PinOff
+  PinOff,
+  Terminal
 } from 'lucide-react'
+import {
+  SiVite,
+  SiNextdotjs,
+  SiNuxt,
+  SiAstro,
+  SiRemix,
+  SiExpo,
+  SiElectron,
+  SiReact,
+  SiVuedotjs,
+  SiSvelte,
+  SiAngular,
+  SiRust,
+  SiDeno,
+  SiDocker,
+  SiNpm,
+  SiPnpm,
+  SiYarn,
+  SiBun
+} from '@icons-pack/react-simple-icons'
 
 function shortenPath(p: string): string {
   const m = p.match(/^\/Users\/[^/]+(\/.*)?$/)
   return m ? '~' + (m[1] ?? '') : p
+}
+
+// 从脚本命令/来源推断项目类型（框架优先，其次语言/运行时，最后包管理器）
+function projectType(project: Project): string | null {
+  const text = project.workspaces
+    .flatMap((w) => w.scripts.map((s) => s.command.toLowerCase()))
+    .join('\n')
+  const has = (re: RegExp): boolean => re.test(text)
+  if (has(/\bnext\s+(dev|build|start)/)) return 'Next.js'
+  if (has(/\bnuxt\b/)) return 'Nuxt'
+  if (has(/\bastro\b/)) return 'Astro'
+  if (has(/\bremix\b/)) return 'Remix'
+  if (has(/\bexpo\b/)) return 'Expo'
+  if (has(/\belectron(-vite)?\b/)) return 'Electron'
+  if (has(/react-scripts/)) return 'CRA'
+  if (has(/vue-cli-service/)) return 'Vue'
+  if (has(/sveltekit|svelte-kit|\bsvelte\b/)) return 'Svelte'
+  if (has(/@angular|(^|\s)ng\s/)) return 'Angular'
+  if (has(/\bvite(?!st)\b/)) return 'Vite'
+  const sources = new Set(project.workspaces.flatMap((w) => w.scripts.map((s) => s.source)))
+  if (sources.has('cargo')) return 'Rust'
+  if (sources.has('deno')) return 'Deno'
+  if (sources.has('compose')) return 'Docker'
+  if (sources.has('make')) return 'Make'
+  if (sources.has('just')) return 'just'
+  if (project.workspaces.some((w) => w.scripts.some((s) => !s.source))) return project.packageManager
+  return null
+}
+
+const TYPE_ICON: Record<string, ComponentType<{ size?: number; color?: string; className?: string }>> = {
+  'Next.js': SiNextdotjs,
+  Nuxt: SiNuxt,
+  Astro: SiAstro,
+  Remix: SiRemix,
+  Expo: SiExpo,
+  Electron: SiElectron,
+  CRA: SiReact,
+  Vue: SiVuedotjs,
+  Svelte: SiSvelte,
+  Angular: SiAngular,
+  Vite: SiVite,
+  Rust: SiRust,
+  Deno: SiDeno,
+  Docker: SiDocker,
+  npm: SiNpm,
+  pnpm: SiPnpm,
+  yarn: SiYarn,
+  bun: SiBun
 }
 
 export function ProjectRow({
@@ -74,6 +143,8 @@ export function ProjectRow({
   }
 
   const monogram = project.name.trim().charAt(0).toUpperCase() || '·'
+  const type = projectType(project)
+  const TypeIcon = type ? (TYPE_ICON[type] ?? Terminal) : null
 
   const avatar = (
     <div
@@ -193,8 +264,18 @@ export function ProjectRow({
               {project.name}
             </span>
           </div>
-          <div className="truncate font-mono text-[11px] text-muted-foreground">
-            {shortenPath(project.path)}
+          <div className="flex items-center gap-1.5">
+            {TypeIcon && (
+              <span
+                title={type ?? undefined}
+                className="flex shrink-0 items-center text-muted-foreground"
+              >
+                <TypeIcon size={12} color="currentColor" />
+              </span>
+            )}
+            <span className="truncate font-mono text-[11px] text-muted-foreground">
+              {shortenPath(project.path)}
+            </span>
           </div>
         </div>
 
