@@ -184,14 +184,13 @@ body:has([data-radix-popper-content-wrapper]) .drag {
   box-shadow: 0 0 7px 0 color-mix(in oklab, var(--run) 55%, transparent);
 }
 
-/* keyboard focus ring (a11y) — :where() keeps specificity 0 so component rings still win.
-   Scoped to buttons/links only — NOT roving-tabindex widgets (menu items get their own
-   highlight), which otherwise showed a stray ring on hover. */
+/* keyboard focus ring (a11y) — match shadcn's flush ring (ring-[3px] ring-ring/50)
+   so custom buttons look identical to shadcn Button / Input on focus.
+   :where() keeps specificity 0 so component ring utilities still win. Scoped to
+   buttons/links only — NOT roving-tabindex widgets (menu items get their own highlight). */
 :where(button, [role="button"], a[href]):focus-visible {
   outline: none;
-  box-shadow:
-    0 0 0 2px var(--color-background),
-    0 0 0 4px color-mix(in oklab, var(--color-ring) 55%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-ring) 50%, transparent);
 }
 
 /* subtle "alive" breathing for running indicators */
