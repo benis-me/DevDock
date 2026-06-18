@@ -294,12 +294,15 @@ export function RightPanel({ project }: { project: Project }): JSX.Element {
         ) : (
           <>
             {termTabs.map((key) => (
-              <div key={key} className="absolute inset-0">
+              <div
+                key={key}
+                className={cn('absolute inset-0', activeTermKey !== key && 'hidden')}
+              >
                 <TerminalView sessionKey={key} visible={activeTermKey === key} />
               </div>
             ))}
             {envTabs.map((p) => (
-              <div key={p} className="absolute inset-0">
+              <div key={p} className={cn('absolute inset-0', activeEnvPath !== p && 'hidden')}>
                 <EnvEditor path={p} visible={activeEnvPath === p} />
               </div>
             ))}
