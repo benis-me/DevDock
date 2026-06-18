@@ -6,7 +6,7 @@ import { ThemeToggle } from '@/components/ThemeToggle'
 import { SettingsDialog } from '@/components/Settings/SettingsDialog'
 import { Hint } from '@/components/ui/hint'
 import { cn } from '@/lib/utils'
-import { Plus, FolderPlus, PanelLeftClose } from 'lucide-react'
+import { Plus, FolderPlus, PanelLeftClose, Search, X } from 'lucide-react'
 import type { Project } from '@shared/types'
 
 // pinned first, preserving array order within each group (Array.sort is stable)
@@ -29,8 +29,17 @@ export function Sidebar({
   const [dropActive, setDropActive] = useState(false)
   const [dragId, setDragId] = useState<string | null>(null)
   const [dropTarget, setDropTarget] = useState<{ id: string; pos: 'before' | 'after' } | null>(null)
+  const [query, setQuery] = useState('')
 
   const ordered = sortProjects(projects)
+  const q = query.trim().toLowerCase()
+  const filtered = q
+    ? ordered.filter(
+        (p) =>
+          p.name.toLowerCase().includes(q) ||
+          p.workspaces.some((w) => w.scripts.some((s) => s.name.toLowerCase().includes(q)))
+      )
+    : ordered
 
   const onFolderDrop = (e: DragEvent): void => {
     e.preventDefault()
@@ -126,6 +135,29 @@ export function Sidebar({
         </Hint>
       </div>
 
+      {projects.length > 0 && (
+        <div className="px-2 pb-1.5">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground/60" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="搜索项目 / 脚本"
+              className="no-drag h-7 w-full rounded-md border border-border bg-transparent pl-7 pr-6 text-xs text-foreground outline-none transition placeholder:text-muted-foreground/60 focus:border-ring"
+            />
+            {query && (
+              <button
+                onClick={() => setQuery('')}
+                aria-label="清除搜索"
+                className="no-drag absolute right-1.5 top-1/2 flex h-4 w-4 -translate-y-1/2 items-center justify-center rounded text-muted-foreground/60 transition hover:bg-accent hover:text-foreground"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="flex-1 overflow-y-auto overflow-x-hidden">
         <div className="flex flex-col gap-0.5 px-2 pb-2">
           {projects.length === 0 ? (
@@ -136,11 +168,13 @@ export function Sidebar({
               <FolderPlus className="h-5 w-5" strokeWidth={1.75} />
               <span className="text-xs">添加项目 · 或把文件夹拖到这里</span>
             </button>
+          ) : filtered.length === 0 ? (
+            <p className="px-2 py-6 text-center text-xs text-muted-foreground">无匹配的项目</p>
           ) : (
-            ordered.map((p) => (
+            filtered.map((p) => (
               <div
                 key={p.id}
-                draggable
+                draggable={!q}
                 onDragStart={(e) => {
                   setDragId(p.id)
                   e.dataTransfer.effectAllowed = 'move'

@@ -125,19 +125,24 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     // 端口冲突最近告警过的会话 key —— 避免再叠加一条通用"运行出错"
     const conflicted = new Set<string>()
-    window.devdock.onPortConflict((key, port) => {
+    window.devdock.onPortConflict(async (key, port) => {
       conflicted.add(key)
       setTimeout(() => conflicted.delete(key), 4000)
       const [projectId, scriptId] = key.split('::')
-      import('sonner').then(({ toast }) =>
-        toast.error(`端口 ${port} 被占用`, {
-          description: scriptId,
-          action: {
-            label: '释放并重启',
-            onClick: () => get().freePortAndRestart(projectId, scriptId, port)
-          }
-        })
-      )
+      // 查清是谁占用了端口，让提示能给出明确信息 + 一键解决
+      const holders = await window.devdock.ports.who(port).catch(() => [])
+      const description = holders.length
+        ? `被 ${holders.map((h) => `${h.command} (PID ${h.pid})`).join('、')} 占用`
+        : scriptId
+      const { toast } = await import('sonner')
+      toast.error(`端口 ${port} 被占用`, {
+        description,
+        duration: Infinity,
+        action: {
+          label: '释放并重启',
+          onClick: () => get().freePortAndRestart(projectId, scriptId, port)
+        }
+      })
     })
 
     window.devdock.onSessionStatus((s) => {

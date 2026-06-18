@@ -1,5 +1,5 @@
-import type { JSX, ReactNode, DragEvent } from 'react'
-import { useState } from 'react'
+import type { JSX, ReactNode, DragEvent, WheelEvent } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useAppStore } from '@/store/useAppStore'
 import { cn } from '@/lib/utils'
 import { X, SquareTerminal, Play, FileCog, Terminal, ChevronDown } from 'lucide-react'
@@ -150,6 +150,9 @@ export function RightPanel({ project }: { project: Project }): JSX.Element {
 
   const [tabDrag, setTabDrag] = useState<{ id: string; group: 'term' | 'env' } | null>(null)
   const [dropTab, setDropTab] = useState<{ id: string; pos: 'before' | 'after' } | null>(null)
+  const tabBarRef = useRef<HTMLDivElement>(null)
+  const [canLeft, setCanLeft] = useState(false)
+  const [canRight, setCanRight] = useState(false)
 
   const projectId = project.id
   const termTabs = openTabs.filter((k) => k.startsWith(projectId + '::'))
@@ -223,10 +226,34 @@ export function RightPanel({ project }: { project: Project }): JSX.Element {
     </div>
   )
 
+  const updateFades = (): void => {
+    const el = tabBarRef.current
+    if (!el) return
+    setCanLeft(el.scrollLeft > 1)
+    setCanRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 1)
+  }
+  const onTabWheel = (e: WheelEvent): void => {
+    const el = tabBarRef.current
+    if (!el || e.deltaY === 0) return
+    el.scrollLeft += e.deltaY // 垂直滚轮 → 横向滚动
+  }
+  useEffect(() => {
+    updateFades()
+    window.addEventListener('resize', updateFades)
+    return () => window.removeEventListener('resize', updateFades)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [total])
+
   return (
     <div className="flex h-full w-full min-w-0 flex-col overflow-hidden bg-background">
       {/* unified tab bar — scrollbar hidden so it doesn't consume height */}
-      <div className="no-scrollbar flex h-9 shrink-0 items-center gap-1 overflow-x-auto border-b border-border bg-card/40 px-1">
+      <div className="relative shrink-0 border-b border-border bg-card/40">
+        <div
+          ref={tabBarRef}
+          onWheel={onTabWheel}
+          onScroll={updateFades}
+          className="no-scrollbar flex h-9 items-center gap-1 overflow-x-auto px-1"
+        >
         {total === 0 ? (
           <div className="flex items-center gap-2 px-1 text-xs text-muted-foreground">
             <SquareTerminal className="h-3.5 w-3.5" />
@@ -267,6 +294,13 @@ export function RightPanel({ project }: { project: Project }): JSX.Element {
               )
             )}
           </>
+        )}
+        </div>
+        {canLeft && (
+          <div className="pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-card to-transparent" />
+        )}
+        {canRight && (
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-card to-transparent" />
         )}
       </div>
 
