@@ -278,26 +278,11 @@ body:has([data-radix-popper-content-wrapper]) .drag {
 }
 /* collapsed: start the line at the project header's bottom border (h-11 = 2.75rem),
    overlapping it by 1px, so the traffic-light strip stays clean and the lines meet */
+/* collapsed: the vertical line + rounded top-left corner are drawn by the main
+   body (ProjectView), which rounds into the header's bottom border with no stray
+   right angle — so hide the handle's own line to avoid doubling it. */
 .resize-handle.is-collapsed::before {
-  top: calc(2.75rem - 1px);
-}
-/* collapsed: round the inner corner where the sidebar line meets the header's
-   bottom border. Drawn on the handle itself (same element as the vertical line)
-   so left/top borders line up to the pixel with the existing lines. */
-.resize-handle.is-collapsed {
-  z-index: 10;
-}
-.resize-corner {
-  position: absolute;
-  left: 0;
-  top: calc(2.75rem - 1px);
-  width: 9px;
-  height: 9px;
-  border-top: 1px solid var(--color-border);
-  border-left: 1px solid var(--color-border);
-  border-top-left-radius: 8px;
-  background: var(--color-background);
-  pointer-events: none;
+  display: none;
 }
 /* wider invisible grab area */
 .resize-handle::after {

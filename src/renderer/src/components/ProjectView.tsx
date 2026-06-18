@@ -82,10 +82,12 @@ export function ProjectView({
     <div className="flex h-full w-full min-w-0 flex-col overflow-hidden">
       <header
         className={cn(
-          'drag flex h-11 items-center gap-2 border-b border-border pr-1.5',
+          'drag flex h-11 items-center gap-2 pr-1.5',
           // collapsed: native traffic lights overflow the narrow rail into this
-          // header — pad left so the project name clears them
-          sidebarCollapsed ? 'pl-8' : 'pl-3'
+          // header — pad left so the project name clears them. The bottom border is
+          // dropped when collapsed; the body below draws it instead so it can round
+          // into the sidebar's vertical line with no leftover right angle.
+          sidebarCollapsed ? 'pl-8' : 'border-b border-border pl-3'
         )}
       >
         {expandButton}
@@ -156,7 +158,13 @@ export function ProjectView({
         <OpenWith path={project.path} />
       </header>
 
-      <div className="min-h-0 flex-1">
+      <div
+        className={cn(
+          'min-h-0 flex-1',
+          // collapsed: body draws the top + left lines and the rounded inner corner
+          sidebarCollapsed && 'rounded-tl-lg border-l border-t border-border'
+        )}
+      >
         <PanelGroup direction="horizontal" autoSaveId="devdock-main">
           <Panel defaultSize={42} minSize={24} className="flex">
             <ScriptList project={project} />
