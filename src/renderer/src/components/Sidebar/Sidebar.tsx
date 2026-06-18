@@ -1,5 +1,9 @@
 import type { JSX, DragEvent } from 'react'
 import { useState } from 'react'
+import { DragDropProvider } from '@dnd-kit/react'
+import { useSortable } from '@dnd-kit/react/sortable'
+import { PointerSensor, PointerActivationConstraints } from '@dnd-kit/dom'
+import { move } from '@dnd-kit/helpers'
 import { useAppStore } from '@/store/useAppStore'
 import { ProjectRow } from './ProjectRow'
 import { ThemeToggle } from '@/components/ThemeToggle'
@@ -12,6 +16,22 @@ import type { Project } from '@shared/types'
 // pinned first, preserving array order within each group (Array.sort is stable)
 function sortProjects(projects: Project[]): Project[] {
   return [...projects].sort((a, b) => Number(!!b.pinned) - Number(!!a.pinned))
+}
+
+// 移动 5px 才算拖拽，单击 / 点行内按钮不会误触发
+const dragSensors = [
+  PointerSensor.configure({
+    activationConstraints: [new PointerActivationConstraints.Distance({ value: 5 })]
+  })
+]
+
+function SortableProjectRow({ project, index }: { project: Project; index: number }): JSX.Element {
+  const { ref, isDragging } = useSortable({ id: project.id, index })
+  return (
+    <div ref={ref} className={cn('rounded-md', isDragging && 'opacity-50')}>
+      <ProjectRow project={project} />
+    </div>
+  )
 }
 
 export function Sidebar({
@@ -27,8 +47,6 @@ export function Sidebar({
   const reorderProjects = useAppStore((s) => s.reorderProjects)
 
   const [dropActive, setDropActive] = useState(false)
-  const [dragId, setDragId] = useState<string | null>(null)
-  const [dropTarget, setDropTarget] = useState<{ id: string; pos: 'before' | 'after' } | null>(null)
   const [query, setQuery] = useState('')
 
   const ordered = sortProjects(projects)
@@ -54,22 +72,6 @@ export function Sidebar({
       e.preventDefault()
       setDropActive(true)
     }
-  }
-
-  const commitRowDrop = (): void => {
-    if (dragId && dropTarget) {
-      const ids = ordered.map((p) => p.id)
-      const from = ids.indexOf(dragId)
-      if (from >= 0) {
-        ids.splice(from, 1)
-        let ti = ids.indexOf(dropTarget.id)
-        if (ti < 0) ti = ids.length
-        ids.splice(dropTarget.pos === 'after' ? ti + 1 : ti, 0, dragId)
-        reorderProjects(ids)
-      }
-    }
-    setDragId(null)
-    setDropTarget(null)
   }
 
   if (collapsed) {
@@ -170,52 +172,21 @@ export function Sidebar({
             </button>
           ) : filtered.length === 0 ? (
             <p className="px-2 py-6 text-center text-xs text-muted-foreground">无匹配的项目</p>
+          ) : q ? (
+            // 搜索结果是子集，重排语义不清 —— 过滤时不允许拖拽
+            filtered.map((p) => <ProjectRow key={p.id} project={p} />)
           ) : (
-            filtered.map((p) => (
-              <div
-                key={p.id}
-                draggable={!q}
-                onDragStart={(e) => {
-                  setDragId(p.id)
-                  e.dataTransfer.effectAllowed = 'move'
-                }}
-                onDragOver={(e) => {
-                  if (!dragId) return
-                  e.preventDefault()
-                  if (p.id === dragId) {
-                    setDropTarget(null)
-                    return
-                  }
-                  const rect = e.currentTarget.getBoundingClientRect()
-                  const pos = e.clientY < rect.top + rect.height / 2 ? 'before' : 'after'
-                  setDropTarget((cur) =>
-                    cur?.id === p.id && cur.pos === pos ? cur : { id: p.id, pos }
-                  )
-                }}
-                onDrop={(e) => {
-                  if (dragId) {
-                    e.stopPropagation()
-                    commitRowDrop()
-                  }
-                }}
-                onDragEnd={() => {
-                  setDragId(null)
-                  setDropTarget(null)
-                }}
-                className={cn(
-                  'relative rounded-md transition-opacity',
-                  dragId === p.id && 'opacity-40'
-                )}
-              >
-                {dropTarget?.id === p.id && dropTarget.pos === 'before' && (
-                  <span className="pointer-events-none absolute inset-x-1 -top-px z-10 h-0.5 rounded-full bg-brand" />
-                )}
-                <ProjectRow project={p} />
-                {dropTarget?.id === p.id && dropTarget.pos === 'after' && (
-                  <span className="pointer-events-none absolute inset-x-1 -bottom-px z-10 h-0.5 rounded-full bg-brand" />
-                )}
-              </div>
-            ))
+            <DragDropProvider
+              sensors={dragSensors}
+              onDragEnd={(event) => {
+                if (event.canceled) return
+                reorderProjects(move(ordered, event).map((p) => p.id))
+              }}
+            >
+              {ordered.map((p, index) => (
+                <SortableProjectRow key={p.id} project={p} index={index} />
+              ))}
+            </DragDropProvider>
           )}
         </div>
       </div>

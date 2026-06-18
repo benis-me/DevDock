@@ -1,5 +1,9 @@
-import type { JSX, ReactNode, DragEvent, WheelEvent } from 'react'
+import type { JSX, ReactNode, WheelEvent } from 'react'
 import { useState, useRef, useEffect } from 'react'
+import { DragDropProvider } from '@dnd-kit/react'
+import { useSortable } from '@dnd-kit/react/sortable'
+import { PointerSensor, PointerActivationConstraints } from '@dnd-kit/dom'
+import { move } from '@dnd-kit/helpers'
 import { useAppStore } from '@/store/useAppStore'
 import { cn } from '@/lib/utils'
 import { X, SquareTerminal, Play, FileCog, Terminal, ChevronDown } from 'lucide-react'
@@ -134,6 +138,30 @@ function StatusDot({ status }: { status?: string }): JSX.Element {
   )
 }
 
+// 移动 5px 才算拖拽，单击切换 / 点关闭按钮 / 中键关闭都不受影响
+const tabSensors = [
+  PointerSensor.configure({
+    activationConstraints: [new PointerActivationConstraints.Distance({ value: 5 })]
+  })
+]
+
+function SortableTab({
+  id,
+  index,
+  children
+}: {
+  id: string
+  index: number
+  children: ReactNode
+}): JSX.Element {
+  const { ref, isDragging } = useSortable({ id, index })
+  return (
+    <div ref={ref} className={cn('flex shrink-0', isDragging && 'opacity-50')}>
+      {children}
+    </div>
+  )
+}
+
 export function RightPanel({ project }: { project: Project }): JSX.Element {
   const openTabs = useAppStore((s) => s.openTabs)
   const openEnvPaths = useAppStore((s) => s.openEnvPaths)
@@ -148,8 +176,6 @@ export function RightPanel({ project }: { project: Project }): JSX.Element {
   const reorderTabs = useAppStore((s) => s.reorderTabs)
   const reorderEnvTabs = useAppStore((s) => s.reorderEnvTabs)
 
-  const [tabDrag, setTabDrag] = useState<{ id: string; group: 'term' | 'env' } | null>(null)
-  const [dropTab, setDropTab] = useState<{ id: string; pos: 'before' | 'after' } | null>(null)
   const tabBarRef = useRef<HTMLDivElement>(null)
   const [canLeft, setCanLeft] = useState(false)
   const [canRight, setCanRight] = useState(false)
@@ -167,64 +193,6 @@ export function RightPanel({ project }: { project: Project }): JSX.Element {
   const total = termTabs.length + envTabs.length
   const notStarted =
     activeTermKey && !sessions[activeTermKey] ? findDef(projects, activeTermKey) : null
-
-  const startTabDrag = (e: DragEvent, id: string, group: 'term' | 'env'): void => {
-    setTabDrag({ id, group })
-    e.dataTransfer.effectAllowed = 'move'
-  }
-  const onTabDragOver = (e: DragEvent, id: string, group: 'term' | 'env'): void => {
-    if (!tabDrag || tabDrag.group !== group) return // 只允许同组（终端/.env）内重排
-    e.preventDefault()
-    if (id === tabDrag.id) {
-      setDropTab(null)
-      return
-    }
-    const rect = e.currentTarget.getBoundingClientRect()
-    const pos = e.clientX < rect.left + rect.width / 2 ? 'before' : 'after'
-    setDropTab((cur) => (cur?.id === id && cur.pos === pos ? cur : { id, pos }))
-  }
-  const endTabDrag = (): void => {
-    setTabDrag(null)
-    setDropTab(null)
-  }
-  const commitTabDrop = (): void => {
-    if (tabDrag && dropTab) {
-      const ids = [...(tabDrag.group === 'term' ? termTabs : envTabs)]
-      const from = ids.indexOf(tabDrag.id)
-      if (from >= 0) {
-        ids.splice(from, 1)
-        let ti = ids.indexOf(dropTab.id)
-        if (ti < 0) ti = ids.length
-        ids.splice(dropTab.pos === 'after' ? ti + 1 : ti, 0, tabDrag.id)
-        if (tabDrag.group === 'term') reorderTabs(ids)
-        else reorderEnvTabs(ids)
-      }
-    }
-    setTabDrag(null)
-    setDropTab(null)
-  }
-  const wrapDrag = (id: string, group: 'term' | 'env', node: ReactNode): JSX.Element => (
-    <div
-      key={id}
-      draggable
-      onDragStart={(e) => startTabDrag(e, id, group)}
-      onDragOver={(e) => onTabDragOver(e, id, group)}
-      onDrop={(e) => {
-        e.stopPropagation()
-        commitTabDrop()
-      }}
-      onDragEnd={endTabDrag}
-      className={cn('relative flex shrink-0 transition-opacity', tabDrag?.id === id && 'opacity-40')}
-    >
-      {dropTab?.id === id && dropTab.pos === 'before' && (
-        <span className="pointer-events-none absolute inset-y-1 -left-0.5 z-10 w-0.5 rounded-full bg-brand" />
-      )}
-      {node}
-      {dropTab?.id === id && dropTab.pos === 'after' && (
-        <span className="pointer-events-none absolute inset-y-1 -right-0.5 z-10 w-0.5 rounded-full bg-brand" />
-      )}
-    </div>
-  )
 
   const updateFades = (): void => {
     const el = tabBarRef.current
@@ -261,38 +229,50 @@ export function RightPanel({ project }: { project: Project }): JSX.Element {
           </div>
         ) : (
           <>
-            {termTabs.map((key) =>
-              wrapDrag(
-                key,
-                'term',
-                <Tab
-                  active={activeTermKey === key}
-                  onClick={() => openTab(key)}
-                  onClose={() => closeTab(key)}
-                >
-                  <TabIcon
+            <DragDropProvider
+              sensors={tabSensors}
+              onDragEnd={(event) => {
+                if (event.canceled) return
+                reorderTabs(move(termTabs, event))
+              }}
+            >
+              {termTabs.map((key, index) => (
+                <SortableTab key={key} id={key} index={index}>
+                  <Tab
+                    active={activeTermKey === key}
+                    onClick={() => openTab(key)}
                     onClose={() => closeTab(key)}
-                    icon={<SquareTerminal className="h-3.5 w-3.5" />}
-                  />
-                  <span className="font-mono">{tabLabel(key)}</span>
-                  <StatusDot status={sessions[key]?.status} />
-                </Tab>
-              )
-            )}
-            {envTabs.map((p) =>
-              wrapDrag(
-                p,
-                'env',
-                <Tab
-                  active={activeEnvPath === p}
-                  onClick={() => openEnvFile(p)}
-                  onClose={() => closeEnv(p)}
-                >
-                  <TabIcon onClose={() => closeEnv(p)} icon={<FileCog className="h-3.5 w-3.5" />} />
-                  <span className="font-mono">{fileName(p)}</span>
-                </Tab>
-              )
-            )}
+                  >
+                    <TabIcon
+                      onClose={() => closeTab(key)}
+                      icon={<SquareTerminal className="h-3.5 w-3.5" />}
+                    />
+                    <span className="font-mono">{tabLabel(key)}</span>
+                    <StatusDot status={sessions[key]?.status} />
+                  </Tab>
+                </SortableTab>
+              ))}
+            </DragDropProvider>
+            <DragDropProvider
+              sensors={tabSensors}
+              onDragEnd={(event) => {
+                if (event.canceled) return
+                reorderEnvTabs(move(envTabs, event))
+              }}
+            >
+              {envTabs.map((p, index) => (
+                <SortableTab key={p} id={p} index={index}>
+                  <Tab
+                    active={activeEnvPath === p}
+                    onClick={() => openEnvFile(p)}
+                    onClose={() => closeEnv(p)}
+                  >
+                    <TabIcon onClose={() => closeEnv(p)} icon={<FileCog className="h-3.5 w-3.5" />} />
+                    <span className="font-mono">{fileName(p)}</span>
+                  </Tab>
+                </SortableTab>
+              ))}
+            </DragDropProvider>
           </>
         )}
         </div>
