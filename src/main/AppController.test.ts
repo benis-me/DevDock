@@ -2,8 +2,9 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { mkdtempSync, writeFileSync, mkdirSync, rmSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
-import { AppController } from './AppController'
+import { AppController, inferEnvMode } from './AppController'
 import type { IFileWatcher } from './services/FileWatcher'
+import type { ScriptDef } from '@shared/types'
 
 let dir: string
 let configFile: string
@@ -24,6 +25,38 @@ beforeEach(() => {
   )
 })
 afterEach(() => rmSync(dir, { recursive: true, force: true }))
+
+function def(partial: Partial<ScriptDef>): ScriptDef {
+  return { id: 'x', name: 'x', command: '', kind: 'one-shot', cwd: '/tmp', ...partial }
+}
+
+describe('inferEnvMode', () => {
+  it('dev script → development', () => {
+    expect(inferEnvMode(def({ name: 'dev', command: 'vite' }))).toBe('development')
+  })
+  it('build script → production', () => {
+    expect(inferEnvMode(def({ name: 'build', command: 'vite build' }))).toBe('production')
+  })
+  it('preview script → production', () => {
+    expect(inferEnvMode(def({ name: 'preview', command: 'vite preview' }))).toBe('production')
+  })
+  it('test script → test', () => {
+    expect(inferEnvMode(def({ name: 'test', command: 'vitest run' }))).toBe('test')
+  })
+  it('explicit --mode overrides the keyword', () => {
+    expect(inferEnvMode(def({ name: 'build', command: 'vite build --mode staging' }))).toBe(
+      'staging'
+    )
+  })
+  it('NODE_ENV in the command is honored', () => {
+    expect(inferEnvMode(def({ name: 'start', runCmd: 'NODE_ENV=production node index.js' }))).toBe(
+      'production'
+    )
+  })
+  it('plain command defaults to development', () => {
+    expect(inferEnvMode(def({ name: 'start', command: 'node index.js' }))).toBe('development')
+  })
+})
 
 describe('AppController', () => {
   it('adds a project from a path and scans scripts', async () => {

@@ -31,6 +31,23 @@ import { runInTerminal } from './services/appLauncher'
 import { diffScripts, type ScriptDiff } from './services/scriptDiff'
 import type { IFileWatcher } from './services/FileWatcher'
 
+// 从脚本推断运行 mode（development / production / test / 自定义），用于选对的 .env.* 文件
+export function inferEnvMode(def: ScriptDef): string {
+  const cmd = `${def.runCmd ?? ''} ${def.command ?? ''}`
+  // 命令里显式指定优先：--mode xxx / --mode=xxx / NODE_ENV=xxx（支持 staging 等自定义）
+  const explicit = cmd.match(/(?:--mode[ =]|NODE_ENV=)["']?([a-zA-Z0-9_.-]+)/)
+  if (explicit) return explicit[1]
+  const s = `${def.name} ${cmd}`.toLowerCase()
+  if (/\btest\b|vitest|jest|playwright|\be2e\b|\bspec\b/.test(s)) return 'test'
+  if (/\bbuild\b|\bpreview\b|\bprod\b|\bproduction\b|\brelease\b/.test(s)) return 'production'
+  return 'development'
+}
+
+// Vite 约定的 .env 加载顺序（后者覆盖前者）
+function envFileChain(mode: string): string[] {
+  return ['.env', '.env.local', `.env.${mode}`, `.env.${mode}.local`]
+}
+
 export class AppController extends EventEmitter {
   private store: ProjectStore
   private config: Config
@@ -265,7 +282,9 @@ export class AppController extends EventEmitter {
       scriptId: sessionKey(projectId, scriptId),
       command,
       cwd: def.cwd,
-      env: this.config.settings.injectEnv ? this.loadRunEnv(project.path, def.cwd) : {},
+      env: this.config.settings.injectEnv
+        ? this.loadRunEnv(project.path, def.cwd, inferEnvMode(def))
+        : {},
       url
     })
   }
@@ -313,14 +332,12 @@ export class AppController extends EventEmitter {
   }
 
   // 把项目的 .env / .env.local 注入到脚本运行环境（先根目录后脚本目录，后者优先）
-  private loadRunEnv(root: string, cwd: string): Record<string, string> {
+  // 按运行 mode 走 Vite 约定（.env < .env.local < .env.[mode] < .env.[mode].local）。
+  // 先根目录后脚本目录（后者覆盖前者）。例如 build → production，会用 .env.production 覆盖 .env.local。
+  private loadRunEnv(root: string, cwd: string, mode: string): Record<string, string> {
     const merged: Record<string, string> = {}
-    const files = [
-      join(root, '.env'),
-      join(root, '.env.local'),
-      join(cwd, '.env'),
-      join(cwd, '.env.local')
-    ]
+    const chain = envFileChain(mode)
+    const files = [...chain.map((n) => join(root, n)), ...chain.map((n) => join(cwd, n))]
     const seen = new Set<string>()
     for (const f of files) {
       if (seen.has(f) || !existsSync(f)) continue
