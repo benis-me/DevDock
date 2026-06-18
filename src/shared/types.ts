@@ -73,6 +73,7 @@ export interface UiState {
 
 export interface ScriptPrefs {
   portless?: boolean
+  pinned?: boolean
 }
 
 export interface Settings {

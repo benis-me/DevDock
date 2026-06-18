@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import type { JSX } from 'react'
-import type { Project, WorkspacePkg } from '@shared/types'
+import type { Project, WorkspacePkg, ScriptDef } from '@shared/types'
 import { ScriptItem } from './ScriptItem'
 import { EnvItem } from '@/components/Env/EnvItem'
+import { useAppStore } from '@/store/useAppStore'
+import { sessionKey } from '@shared/util'
 import { cn } from '@/lib/utils'
 import { ChevronRight, ChevronDown, FileWarning } from 'lucide-react'
 
@@ -28,17 +30,43 @@ function Group({
   )
 }
 
-function WorkspaceBlock({ project, ws }: { project: Project; ws: WorkspacePkg }): JSX.Element | null {
-  const [collapsed, setCollapsed] = useState(false)
-  if (ws.scripts.length === 0) return null
-  const longRunning = ws.scripts.filter((s) => s.kind === 'long-running')
-  const oneShot = ws.scripts.filter((s) => s.kind === 'one-shot')
+function WorkspaceBlock({
+  project,
+  ws,
+  hiddenIds
+}: {
+  project: Project
+  ws: WorkspacePkg
+  hiddenIds: Set<string>
+}): JSX.Element | null {
+  const storageKey = `devdock:ws-collapsed:${project.id}:${ws.relPath}`
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem(storageKey) === '1'
+    } catch {
+      return false
+    }
+  })
+  const toggle = (): void =>
+    setCollapsed((c) => {
+      const next = !c
+      try {
+        localStorage.setItem(storageKey, next ? '1' : '0')
+      } catch {
+        /* ignore */
+      }
+      return next
+    })
+  const scripts = ws.scripts.filter((s) => !hiddenIds.has(s.id))
+  if (scripts.length === 0) return null
+  const longRunning = scripts.filter((s) => s.kind === 'long-running')
+  const oneShot = scripts.filter((s) => s.kind === 'one-shot')
 
   return (
     <div className="mb-5 last:mb-0">
       {project.isMonorepo && (
         <button
-          onClick={() => setCollapsed((c) => !c)}
+          onClick={toggle}
           className="mb-2 flex w-full items-center gap-1.5 rounded px-1 py-0.5 text-left transition-colors hover:bg-accent/40"
         >
           {collapsed ? (
@@ -73,6 +101,7 @@ function WorkspaceBlock({ project, ws }: { project: Project; ws: WorkspacePkg })
 }
 
 export function ScriptList({ project }: { project: Project }): JSX.Element {
+  const scriptPrefs = useAppStore((s) => s.scriptPrefs)
   if (project.missing) {
     return (
       <div className="flex h-full w-full flex-col items-center justify-center gap-2 p-6 text-center">
@@ -86,12 +115,26 @@ export function ScriptList({ project }: { project: Project }): JSX.Element {
   const noScripts = project.workspaces.every((w) => w.scripts.length === 0)
   const envFiles = project.envFiles ?? []
 
+  // 收藏（置顶）脚本：跨 workspace 收集，单独成组置顶，原 workspace 组里不再重复
+  const pinnedScripts: ScriptDef[] = []
+  for (const ws of project.workspaces)
+    for (const s of ws.scripts)
+      if (scriptPrefs[sessionKey(project.id, s.id)]?.pinned) pinnedScripts.push(s)
+  const pinnedIds = new Set(pinnedScripts.map((s) => s.id))
+
   return (
     <div className="h-full w-full overflow-y-auto overflow-x-hidden">
       <div className="p-3">
+        {pinnedScripts.length > 0 && (
+          <Group title="收藏" count={pinnedScripts.length}>
+            {pinnedScripts.map((s) => (
+              <ScriptItem key={s.id} projectId={project.id} def={s} />
+            ))}
+          </Group>
+        )}
         {!noScripts &&
           project.workspaces.map((ws) => (
-            <WorkspaceBlock key={ws.relPath} project={project} ws={ws} />
+            <WorkspaceBlock key={ws.relPath} project={project} ws={ws} hiddenIds={pinnedIds} />
           ))}
 
         {envFiles.length > 0 && (

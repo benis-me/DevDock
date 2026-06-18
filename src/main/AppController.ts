@@ -288,6 +288,12 @@ export class AppController extends EventEmitter {
     this.persist()
   }
 
+  setScriptPinned(projectId: string, scriptId: string, pinned: boolean): void {
+    const key = sessionKey(projectId, scriptId)
+    this.config.scriptPrefs[key] = { ...this.config.scriptPrefs[key], pinned }
+    this.persist()
+  }
+
   // 启动时检测一次 portless 是否可用，结果缓存
   refreshPortlessAvailability(): boolean {
     try {

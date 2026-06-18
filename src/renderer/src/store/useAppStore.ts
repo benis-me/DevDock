@@ -52,6 +52,7 @@ interface AppState {
   reorderTabs(orderedKeys: string[]): void
   reorderEnvTabs(orderedPaths: string[]): void
   setPortless(projectId: string, scriptId: string, enabled: boolean): Promise<void>
+  setScriptPinned(projectId: string, scriptId: string, pinned: boolean): Promise<void>
   killPort(port: number): Promise<number[]>
   freePortAndRestart(projectId: string, scriptId: string, port: number): Promise<void>
   setSettings(partial: Partial<Settings>): Promise<void>
@@ -345,6 +346,14 @@ export const useAppStore = create<AppState>((set, get) => ({
       scriptPrefs: { ...st.scriptPrefs, [key]: { ...st.scriptPrefs[key], portless: enabled } }
     }))
     await window.devdock.scripts.setPortless(projectId, scriptId, enabled)
+  },
+
+  async setScriptPinned(projectId, scriptId, pinned) {
+    const key = sessionKey(projectId, scriptId)
+    set((st) => ({
+      scriptPrefs: { ...st.scriptPrefs, [key]: { ...st.scriptPrefs[key], pinned } }
+    }))
+    await window.devdock.scripts.setPinned(projectId, scriptId, pinned)
   },
 
   async killPort(port) {

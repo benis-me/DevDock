@@ -5,7 +5,7 @@ import { sessionKey } from '@shared/util'
 import { portFromUrl } from '@shared/port'
 import type { ScriptDef, SessionStatus } from '@shared/types'
 import { useElapsed } from './useElapsed'
-import { Play, Square, RotateCw, ArrowUpRight, ChevronDown } from 'lucide-react'
+import { Play, Square, RotateCw, ArrowUpRight, ChevronDown, Star } from 'lucide-react'
 import { TerminalRunMenu } from '@/components/TerminalRunMenu'
 
 const DOT: Record<SessionStatus | 'idle', string> = {
@@ -59,6 +59,8 @@ export function ScriptItem({ projectId, def }: { projectId: string; def: ScriptD
   const portless = explicitPortless ?? (portlessDefault && def.kind === 'long-running')
   const portlessAvailable = useAppStore((s) => s.portlessAvailable)
   const setPortless = useAppStore((s) => s.setPortless)
+  const pinned = useAppStore((s) => s.scriptPrefs[key]?.pinned) ?? false
+  const setPinned = useAppStore((s) => s.setScriptPinned)
 
   const status: SessionStatus | 'idle' = session?.status ?? 'idle'
   const isActive = status === 'running' || status === 'starting'
@@ -113,6 +115,19 @@ export function ScriptItem({ projectId, def }: { projectId: string; def: ScriptD
         </div>
 
         <div className="flex shrink-0 items-center gap-1" onClick={(e) => e.stopPropagation()}>
+          <button
+            title={pinned ? '取消收藏' : '收藏置顶'}
+            aria-label={pinned ? '取消收藏' : '收藏置顶'}
+            onClick={() => setPinned(projectId, def.id, !pinned)}
+            className={cn(
+              'flex h-7 w-6 items-center justify-center rounded-md transition-colors',
+              pinned
+                ? 'text-amber-400 hover:text-amber-500'
+                : 'text-muted-foreground/40 opacity-0 hover:text-foreground group-hover:opacity-100'
+            )}
+          >
+            <Star className={cn('h-3.5 w-3.5', pinned && 'fill-current')} />
+          </button>
           {def.kind === 'long-running' && portlessAvailable && (
             <button
               title={
