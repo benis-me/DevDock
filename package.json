@@ -12,7 +12,10 @@
     "test:watch": "vitest",
     "dist": "electron-vite build && electron-builder",
     "dist:mac": "electron-vite build && electron-builder --mac",
-    "dist:dir": "electron-vite build && electron-builder --dir"
+    "dist:dir": "electron-vite build && electron-builder --dir",
+    "release": "npm version patch && bun run dist:mac",
+    "release:minor": "npm version minor && bun run dist:mac",
+    "release:major": "npm version major && bun run dist:mac"
   },
   "keywords": [],
   "author": "",
