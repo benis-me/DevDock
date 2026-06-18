@@ -4,6 +4,7 @@
   "description": "A lightweight desktop app for managing your local projects' dev scripts.",
   "main": "./out/main/index.js",
   "scripts": {
+    "postinstall": "node scripts/fix-native-sign.mjs",
     "test": "vitest run",
     "dev": "electron-vite dev",
     "build": "electron-vite build",
