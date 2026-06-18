@@ -281,6 +281,24 @@ body:has([data-radix-popper-content-wrapper]) .drag {
 .resize-handle.is-collapsed::before {
   top: calc(2.75rem - 1px);
 }
+/* collapsed: round the inner corner where the sidebar line meets the header's
+   bottom border. Drawn on the handle itself (same element as the vertical line)
+   so left/top borders line up to the pixel with the existing lines. */
+.resize-handle.is-collapsed {
+  z-index: 10;
+}
+.resize-corner {
+  position: absolute;
+  left: 0;
+  top: calc(2.75rem - 1px);
+  width: 9px;
+  height: 9px;
+  border-top: 1px solid var(--color-border);
+  border-left: 1px solid var(--color-border);
+  border-top-left-radius: 8px;
+  background: var(--color-background);
+  pointer-events: none;
+}
 /* wider invisible grab area */
 .resize-handle::after {
   content: "";
