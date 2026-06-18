@@ -10,6 +10,7 @@ export default defineConfig({
   preload: { resolve: { alias: sharedAlias }, plugins: [externalizeDepsPlugin()] },
   renderer: {
     resolve: { alias: { '@': resolve('src/renderer/src'), ...sharedAlias } },
+    server: { port: 5180 },
     plugins: [react(), tailwindcss()]
   }
 })
