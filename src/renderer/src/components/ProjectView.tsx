@@ -49,23 +49,24 @@ export function ProjectView({
 
   if (!project) {
     return (
-      <div className="drag relative flex h-full w-full flex-col items-center justify-center gap-5 px-6">
+      <div className="drag relative flex h-full w-full items-center justify-center px-6">
         {expandButton && <div className="absolute left-8 top-3">{expandButton}</div>}
-        <div className="glow-run flex h-16 w-16 items-center justify-center rounded-2xl bg-brand/10 text-brand">
-          <SquareTerminal className="h-8 w-8" strokeWidth={1.5} />
-        </div>
-        <div className="text-center">
-          <h1 className="text-base font-semibold tracking-tight text-foreground">DevDock</h1>
-          <p className="mt-1.5 max-w-xs text-sm leading-relaxed text-muted-foreground">
-            管理本地项目的开发脚本——一键启动、查看终端、追踪运行状态。
+        <div className="flex w-full max-w-xs flex-col items-center text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-border bg-muted/40 text-muted-foreground/80">
+            <SquareTerminal className="h-7 w-7" strokeWidth={1.5} />
+          </div>
+          <h1 className="mt-5 text-lg font-semibold tracking-tight text-foreground">DevDock</h1>
+          <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
+            管理本地项目的开发脚本，一键启动、查看终端、追踪运行状态。
           </p>
+          <button
+            onClick={addProject}
+            className="no-drag mt-6 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-[13px] font-medium text-primary-foreground transition-all hover:opacity-90 active:scale-[0.98]"
+          >
+            <Plus className="h-4 w-4" /> 添加项目
+          </button>
+          <p className="mt-3 text-xs text-muted-foreground/60">或把项目文件夹拖到窗口</p>
         </div>
-        <button
-          onClick={addProject}
-          className="no-drag inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-[13px] font-medium text-primary-foreground transition-all hover:opacity-90 active:scale-[0.98]"
-        >
-          <Plus className="h-4 w-4" /> 添加项目
-        </button>
       </div>
     )
   }
