@@ -3,22 +3,38 @@
 // When that happens the kernel SIGKILLs them on exec — surfacing as exit code
 // 137 or esbuild's "The service was stopped: write EPIPE". Re-signing with an
 // ad-hoc signature fixes it. No-op on non-macOS platforms (Linux/Windows/CI).
-import { execSync } from 'node:child_process'
+//
+// Extraction can ALSO drop the executable bit on helper binaries that have no
+// extension. node-pty's `spawn-helper` is the prime offender: node-pty execs it
+// via posix_spawnp to launch the shell, so a missing +x bit surfaces as
+// "posix_spawnp failed." and the terminal never starts. We chmod those back.
+import { execSync, spawnSync } from 'node:child_process'
 import { platform } from 'node:os'
 
 if (platform() !== 'darwin') process.exit(0)
 
+// Helper executables that must keep their +x bit (no file extension, so the
+// generic *.node match below won't catch them).
+const EXECUTABLES = new Set(['spawn-helper'])
+
 try {
-  const files = execSync('find node_modules \\( -name "*.node" -o -name esbuild \\) -type f', {
-    encoding: 'utf8',
-    maxBuffer: 64 * 1024 * 1024
-  })
+  const files = execSync(
+    'find node_modules \\( -name "*.node" -o -name esbuild -o -name spawn-helper \\) -type f',
+    {
+      encoding: 'utf8',
+      maxBuffer: 64 * 1024 * 1024
+    }
+  )
     .split('\n')
     .filter(Boolean)
 
   let signed = 0
   for (const f of files) {
     try {
+      if (EXECUTABLES.has(f.split('/').pop())) {
+        // Restore the executable bit lost during extraction before re-signing.
+        spawnSync('chmod', ['+x', f])
+      }
       execSync(`xattr -c "${f}" 2>/dev/null; codesign --force --sign - "${f}"`, { stdio: 'ignore' })
       signed++
     } catch {
