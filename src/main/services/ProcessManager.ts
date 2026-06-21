@@ -147,11 +147,21 @@ export class ProcessManager extends EventEmitter {
   }
 
   write(scriptId: string, data: string): void {
-    this.sessions.get(scriptId)?.pty.write(data)
+    try {
+      this.sessions.get(scriptId)?.pty.write(data)
+    } catch {
+      /* pty 已退出，fd 关闭 — 忽略对已死会话的写入 */
+    }
   }
 
   resize(scriptId: string, cols: number, rows: number): void {
-    this.sessions.get(scriptId)?.pty.resize(cols, rows)
+    // 进程退出后会话仍保留在 map 里（用于展示 buffer），此时 master fd 已关闭，
+    // node-pty 的 resize 会对已关闭 fd 调 ioctl 抛 EBADF。容错即可。
+    try {
+      this.sessions.get(scriptId)?.pty.resize(cols, rows)
+    } catch {
+      /* pty 已退出，fd 关闭 — 忽略迟到的 resize */
+    }
   }
 
   getBuffer(scriptId: string): string {
