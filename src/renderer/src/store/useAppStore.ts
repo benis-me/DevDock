@@ -422,7 +422,9 @@ export const useAppStore = create<AppState>((set, get) => ({
     set((st) => {
       const sess = st.sessions[key]
       if (!sess) return {}
-      return { sessions: { ...st.sessions, [key]: { ...sess, url } } }
+      const urls = sess.urls ?? []
+      if (urls.includes(url)) return {}
+      return { sessions: { ...st.sessions, [key]: { ...sess, urls: [...urls, url] } } }
     })
   },
 

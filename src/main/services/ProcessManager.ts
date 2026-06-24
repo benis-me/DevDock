@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events'
 import type { SessionState, SessionStatus } from '@shared/types'
-import { detectUrl, stripAnsi } from './UrlDetector'
+import { detectUrls, stripAnsi } from './UrlDetector'
 import { detectPortConflict } from '@shared/port'
 import { realPtySpawner, type IPty, type PtySpawner } from './ptySpawner'
 
@@ -88,17 +88,12 @@ export class ProcessManager extends EventEmitter {
       if (session.state.status === 'starting') {
         session.state.status = 'running'
         this.emit('status', { ...session.state })
-        if (opts.url && !session.state.url) {
-          session.state.url = opts.url
-          this.emit('url', opts.scriptId, opts.url)
-        }
       }
-      if (!session.state.url) {
-        const url = detectUrl(data)
-        if (url) {
-          session.state.url = url
-          this.emit('url', opts.scriptId, url)
-        }
+      if (opts.url) {
+        // portless 预设域名接管，不再解析输出里的 localhost 地址
+        this.addUrl(session.state, opts.scriptId, opts.url)
+      } else {
+        for (const u of detectUrls(data)) this.addUrl(session.state, opts.scriptId, u)
       }
       const port = detectPortConflict(stripAnsi(data))
       if (port && session.conflictPort !== port) {
@@ -114,12 +109,26 @@ export class ProcessManager extends EventEmitter {
       }
       session.state.status = session.stopRequested || exitCode === 0 ? 'exited' : 'errored'
       session.state.exitCode = exitCode
-      session.state.url = undefined
+      session.state.urls = undefined
       const note = `\r\n\x1b[2m── DevDock：进程已结束（退出码 ${exitCode}）──\x1b[0m\r\n`
       session.buffer = (session.buffer + note).slice(-BUFFER_LIMIT)
       this.emit('data', opts.scriptId, note)
       this.emit('status', { ...session.state })
     })
+  }
+
+  // 累积一个服务链接（规范化到 origin，按 origin 去重，上限 5），有新链接就通知渲染层
+  private addUrl(state: SessionState, scriptId: string, rawUrl: string): void {
+    let url = rawUrl
+    try {
+      url = new URL(rawUrl).origin
+    } catch {
+      /* 非法 URL，保留原样 */
+    }
+    if (!state.urls) state.urls = []
+    if (state.urls.length >= 5 || state.urls.includes(url)) return
+    state.urls.push(url)
+    this.emit('url', scriptId, url)
   }
 
   stop(scriptId: string): void {

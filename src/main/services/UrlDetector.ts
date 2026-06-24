@@ -11,15 +11,9 @@ export function stripAnsi(input: string): string {
   return input.replace(ANSI_REGEX, '')
 }
 
-export function detectUrl(input: string): string | null {
-  const text = stripAnsi(input)
-  const lines = text.split(/\r?\n/)
-  for (const line of lines) {
-    if (/local/i.test(line)) {
-      const m = line.match(URL_REGEX)
-      if (m && m.length) return m[0]
-    }
-  }
-  const all = text.match(URL_REGEX)
-  return all && all.length ? all[0] : null
+// 一段输出里出现的所有服务链接（loopback / *.localhost；LAN 地址由 URL_REGEX
+// 白名单天然排除）。去重与上限交给调用方（ProcessManager 按 origin 累积）。
+export function detectUrls(input: string): string[] {
+  const m = stripAnsi(input).match(URL_REGEX)
+  return m ? [...m] : []
 }

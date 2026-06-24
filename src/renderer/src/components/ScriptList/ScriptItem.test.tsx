@@ -26,7 +26,7 @@ describe('ScriptItem', () => {
 
   it('shows PID, url and stop affordance when running', () => {
     useAppStore.setState({
-      sessions: { 'p1::.#dev': { scriptId: 'p1::.#dev', pid: 321, status: 'running', startedAt: Date.now(), url: 'http://localhost:5173/' } }
+      sessions: { 'p1::.#dev': { scriptId: 'p1::.#dev', pid: 321, status: 'running', startedAt: Date.now(), urls: ['http://localhost:5173/'] } }
     })
     render(<ScriptItem projectId="p1" def={def} />)
     expect(screen.getByText(/321/)).toBeInTheDocument()

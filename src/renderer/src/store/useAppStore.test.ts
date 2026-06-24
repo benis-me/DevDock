@@ -14,10 +14,15 @@ describe('useAppStore reducers', () => {
     expect(useAppStore.getState().sessions['p1::.#dev'].status).toBe('running')
   })
 
-  it('applyUrl updates url on existing session', () => {
+  it('applyUrl appends urls (dedup) on existing session', () => {
     useAppStore.getState().applyStatus({ scriptId: 'p1::.#dev', pid: 9, status: 'running', startedAt: 1 })
-    useAppStore.getState().applyUrl('p1::.#dev', 'http://localhost:5173/')
-    expect(useAppStore.getState().sessions['p1::.#dev'].url).toBe('http://localhost:5173/')
+    useAppStore.getState().applyUrl('p1::.#dev', 'http://localhost:5173')
+    useAppStore.getState().applyUrl('p1::.#dev', 'http://localhost:3000')
+    useAppStore.getState().applyUrl('p1::.#dev', 'http://localhost:5173') // 重复，忽略
+    expect(useAppStore.getState().sessions['p1::.#dev'].urls).toEqual([
+      'http://localhost:5173',
+      'http://localhost:3000'
+    ])
   })
 
   it('openTab adds unique tabs and sets selection', () => {

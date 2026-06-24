@@ -39,8 +39,8 @@ describe('ProcessManager', () => {
     pm.on('url', (_id, url) => urls.push(url))
     pm.start({ scriptId: '.#dev', command: 'x', cwd: '/x' })
     fake.emitData('  ➜  Local:   http://localhost:5173/\n')
-    expect(pm.getState('.#dev')?.url).toBe('http://localhost:5173/')
-    expect(urls).toEqual(['http://localhost:5173/'])
+    expect(pm.getState('.#dev')?.urls).toEqual(['http://localhost:5173'])
+    expect(urls).toEqual(['http://localhost:5173'])
   })
 
   it('keeps a scrollback buffer retrievable via getBuffer', () => {

@@ -65,7 +65,7 @@ export function ScriptItem({ projectId, def }: { projectId: string; def: ScriptD
   const status: SessionStatus | 'idle' = session?.status ?? 'idle'
   const isActive = status === 'running' || status === 'starting'
   const elapsed = useElapsed(session?.startedAt, isActive)
-  const port = portFromUrl(session?.url)
+  const urls = session?.urls ?? []
 
   return (
     <div
@@ -91,14 +91,19 @@ export function ScriptItem({ projectId, def }: { projectId: string; def: ScriptD
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <span className="truncate text-[13px] font-medium text-foreground">{def.name}</span>
-            {isActive && port && (
-              <span
-                title={`监听端口 ${port}`}
-                className="shrink-0 rounded bg-run/15 px-1 font-mono text-[10px] font-medium text-run"
-              >
-                :{port}
-              </span>
-            )}
+            {isActive &&
+              urls.map((u) => {
+                const p = portFromUrl(u)
+                return p ? (
+                  <span
+                    key={u}
+                    title={`监听端口 ${p}`}
+                    className="shrink-0 rounded bg-run/15 px-1 font-mono text-[10px] font-medium text-run"
+                  >
+                    :{p}
+                  </span>
+                ) : null
+              })}
             {isActive && session && (
               <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
                 {session.pid > 0 ? `PID ${session.pid} · ` : ''}
@@ -174,17 +179,22 @@ export function ScriptItem({ projectId, def }: { projectId: string; def: ScriptD
         </div>
       </div>
 
-      {session?.url && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation()
-            window.devdock.shell.openExternal(session.url!)
-          }}
-          className="mt-1.5 ml-[18px] flex items-center gap-1 font-mono text-[11px] text-brand hover:underline"
-        >
-          {session.url}
-          <ArrowUpRight className="h-3 w-3" />
-        </button>
+      {urls.length > 0 && (
+        <div className="mt-1.5 ml-[18px] flex flex-col items-start gap-0.5">
+          {urls.map((u) => (
+            <button
+              key={u}
+              onClick={(e) => {
+                e.stopPropagation()
+                window.devdock.shell.openExternal(u)
+              }}
+              className="flex items-center gap-1 font-mono text-[11px] text-brand hover:underline"
+            >
+              {u}
+              <ArrowUpRight className="h-3 w-3" />
+            </button>
+          ))}
+        </div>
       )}
     </div>
   )

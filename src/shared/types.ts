@@ -108,7 +108,7 @@ export interface SessionState {
   status: SessionStatus
   startedAt: number
   exitCode?: number
-  url?: string
+  urls?: string[] // 检测到的服务链接（origin，可能多个：前端 + 后端…）
 }
 
 export const CONFIG_VERSION = 1
