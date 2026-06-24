@@ -1,11 +1,12 @@
 import type { JSX } from 'react'
+import { useState, useEffect } from 'react'
 import { useAppStore } from '@/store/useAppStore'
 import { cn } from '@/lib/utils'
 import { sessionKey } from '@shared/util'
 import { portFromUrl } from '@shared/port'
 import type { ScriptDef, SessionStatus } from '@shared/types'
 import { useElapsed } from './useElapsed'
-import { Play, Square, RotateCw, ArrowUpRight, ChevronDown, Star } from 'lucide-react'
+import { Play, Square, RotateCw, ArrowUpRight, ChevronDown, Star, Loader2 } from 'lucide-react'
 import { TerminalRunMenu } from '@/components/TerminalRunMenu'
 
 const DOT: Record<SessionStatus | 'idle', string> = {
@@ -20,20 +21,23 @@ function IconBtn({
   children,
   title,
   onClick,
-  tone = 'default'
+  tone = 'default',
+  disabled = false
 }: {
   children: React.ReactNode
   title: string
   onClick: () => void
   tone?: 'default' | 'danger' | 'run'
+  disabled?: boolean
 }): JSX.Element {
   return (
     <button
       title={title}
       aria-label={title}
       onClick={onClick}
+      disabled={disabled}
       className={cn(
-        'flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors',
+        'flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors disabled:opacity-60',
         tone === 'danger'
           ? 'hover:bg-destructive/15 hover:text-destructive'
           : tone === 'run'
@@ -66,6 +70,11 @@ export function ScriptItem({ projectId, def }: { projectId: string; def: ScriptD
   const isActive = status === 'running' || status === 'starting'
   const elapsed = useElapsed(session?.startedAt, isActive)
   const urls = session?.urls ?? []
+  // 点停止后到进程真正退出有延迟，先给个 loading；进程不再活跃时自动清除
+  const [stopping, setStopping] = useState(false)
+  useEffect(() => {
+    if (!isActive) setStopping(false)
+  }, [isActive])
 
   return (
     <div
@@ -156,8 +165,20 @@ export function ScriptItem({ projectId, def }: { projectId: string; def: ScriptD
               <IconBtn title="重启" onClick={() => restartScript(projectId, def.id)}>
                 <RotateCw className="h-3.5 w-3.5" />
               </IconBtn>
-              <IconBtn title="停止" tone="danger" onClick={() => stopScript(key)}>
-                <Square className="h-3.5 w-3.5" />
+              <IconBtn
+                title={stopping ? '停止中…' : '停止'}
+                tone="danger"
+                disabled={stopping}
+                onClick={() => {
+                  setStopping(true)
+                  stopScript(key)
+                }}
+              >
+                {stopping ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Square className="h-3.5 w-3.5" />
+                )}
               </IconBtn>
             </>
           ) : (
