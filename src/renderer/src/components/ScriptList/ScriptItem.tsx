@@ -116,6 +116,11 @@ export function ScriptItem({
                 {origin}
               </span>
             )}
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-muted-foreground/80">
+              {def.command}
+            </span>
             {isActive &&
               urls.map((u) => {
                 const p = portFromUrl(u)
@@ -138,9 +143,6 @@ export function ScriptItem({
             {status === 'errored' && (
               <span className="shrink-0 text-[10px] font-medium text-destructive">异常退出</span>
             )}
-          </div>
-          <div className="truncate font-mono text-[11px] text-muted-foreground/80">
-            {def.command}
           </div>
         </div>
 
