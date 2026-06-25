@@ -117,33 +117,35 @@ export function ScriptItem({
               </span>
             )}
           </div>
-          <div className="flex items-center gap-2">
-            <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-muted-foreground/80">
-              {def.command}
-            </span>
-            {isActive &&
-              urls.map((u) => {
-                const p = portFromUrl(u)
-                return p ? (
-                  <span
-                    key={u}
-                    title={`监听端口 ${p}`}
-                    className="shrink-0 rounded bg-run/15 px-1 font-mono text-[10px] font-medium text-run"
-                  >
-                    :{p}
-                  </span>
-                ) : null
-              })}
-            {isActive && session && (
-              <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
-                {session.pid > 0 ? `PID ${session.pid} · ` : ''}
-                {elapsed}
-              </span>
-            )}
-            {status === 'errored' && (
-              <span className="shrink-0 text-[10px] font-medium text-destructive">异常退出</span>
-            )}
+          <div className="truncate font-mono text-[11px] text-muted-foreground/80">
+            {def.command}
           </div>
+          {(isActive || status === 'errored') && (
+            <div className="mt-0.5 flex items-center gap-2">
+              {isActive &&
+                urls.map((u) => {
+                  const p = portFromUrl(u)
+                  return p ? (
+                    <span
+                      key={u}
+                      title={`监听端口 ${p}`}
+                      className="shrink-0 rounded bg-run/15 px-1 font-mono text-[10px] font-medium text-run"
+                    >
+                      :{p}
+                    </span>
+                  ) : null
+                })}
+              {isActive && session && (
+                <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
+                  {session.pid > 0 ? `PID ${session.pid} · ` : ''}
+                  {elapsed}
+                </span>
+              )}
+              {status === 'errored' && (
+                <span className="shrink-0 text-[10px] font-medium text-destructive">异常退出</span>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="flex shrink-0 items-center gap-1" onClick={(e) => e.stopPropagation()}>
