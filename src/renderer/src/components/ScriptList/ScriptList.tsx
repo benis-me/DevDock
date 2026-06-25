@@ -78,7 +78,7 @@ function WorkspaceBlock({
           <span className="truncate font-mono text-[11px] text-muted-foreground">{ws.relPath}</span>
         </button>
       )}
-      {!collapsed && (
+      {(!collapsed || !project.isMonorepo) && (
         <div className={cn(project.isMonorepo && 'pl-2')}>
           {longRunning.length > 0 && (
             <Group title="服务" count={longRunning.length}>
@@ -134,7 +134,12 @@ export function ScriptList({ project }: { project: Project }): JSX.Element {
         )}
         {!noScripts &&
           project.workspaces.map((ws) => (
-            <WorkspaceBlock key={ws.relPath} project={project} ws={ws} hiddenIds={pinnedIds} />
+            <WorkspaceBlock
+              key={`${project.id}:${ws.relPath}`}
+              project={project}
+              ws={ws}
+              hiddenIds={pinnedIds}
+            />
           ))}
 
         {envFiles.length > 0 && (
