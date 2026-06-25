@@ -116,19 +116,25 @@ export function ScriptList({ project }: { project: Project }): JSX.Element {
   const envFiles = project.envFiles ?? []
 
   // 收藏（置顶）脚本：跨 workspace 收集，单独成组置顶，原 workspace 组里不再重复
-  const pinnedScripts: ScriptDef[] = []
+  const pinnedScripts: { def: ScriptDef; origin: string }[] = []
   for (const ws of project.workspaces)
     for (const s of ws.scripts)
-      if (scriptPrefs[sessionKey(project.id, s.id)]?.pinned) pinnedScripts.push(s)
-  const pinnedIds = new Set(pinnedScripts.map((s) => s.id))
+      if (scriptPrefs[sessionKey(project.id, s.id)]?.pinned)
+        pinnedScripts.push({ def: s, origin: ws.relPath })
+  const pinnedIds = new Set(pinnedScripts.map((p) => p.def.id))
 
   return (
     <div className="h-full w-full overflow-y-auto overflow-x-hidden">
       <div className="p-3">
         {pinnedScripts.length > 0 && (
           <Group title="收藏" count={pinnedScripts.length}>
-            {pinnedScripts.map((s) => (
-              <ScriptItem key={s.id} projectId={project.id} def={s} />
+            {pinnedScripts.map(({ def, origin }) => (
+              <ScriptItem
+                key={def.id}
+                projectId={project.id}
+                def={def}
+                origin={origin === '.' ? undefined : origin}
+              />
             ))}
           </Group>
         )}

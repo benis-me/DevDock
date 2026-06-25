@@ -50,7 +50,15 @@ function IconBtn({
   )
 }
 
-export function ScriptItem({ projectId, def }: { projectId: string; def: ScriptDef }): JSX.Element {
+export function ScriptItem({
+  projectId,
+  def,
+  origin
+}: {
+  projectId: string
+  def: ScriptDef
+  origin?: string // 收藏组里标注脚本所属 workspace（monorepo 子包）
+}): JSX.Element {
   const key = sessionKey(projectId, def.id)
   const session = useAppStore((s) => s.sessions[key])
   const selected = useAppStore((s) => s.selectedScriptId === key && !s.activeEnvPath)
@@ -100,6 +108,14 @@ export function ScriptItem({ projectId, def }: { projectId: string; def: ScriptD
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <span className="truncate text-[13px] font-medium text-foreground">{def.name}</span>
+            {origin && (
+              <span
+                title={`来自 ${origin}`}
+                className="shrink-0 truncate rounded bg-muted px-1 font-mono text-[10px] text-muted-foreground"
+              >
+                {origin}
+              </span>
+            )}
             {isActive &&
               urls.map((u) => {
                 const p = portFromUrl(u)
